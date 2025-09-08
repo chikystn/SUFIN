@@ -260,6 +260,7 @@
             align-items: center;
             padding: 10px 0;
             border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+            gap: 10px;
         }
         .strategic-fund-card .component-item:last-child {
             border-bottom: none;
@@ -275,6 +276,8 @@
         .strategic-fund-card .component-amount {
             font-weight: 700;
             font-size: 1.1rem;
+            text-align: right;
+            flex-shrink: 0;
         }
         .strategic-fund-card .summary {
             background-color: rgba(59, 130, 246, 0.2);
@@ -628,7 +631,11 @@
                 danaStrategis: {
                     judul: "Dana Siaga Pembayaran Kuliah",
                     target: 1500000,
-                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak."
+                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak.",
+                    komponen: [
+                        { nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0, editable: false },
+                        { nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 850000, editable: true }
+                    ]
                 },
                 rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
             },
@@ -658,7 +665,11 @@
                     danaStrategis: {
                         judul: "Dana Siaga Pembayaran Kuliah",
                         target: 1500000,
-                        deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak."
+                        deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak.",
+                        komponen: [
+                            { nama: 'Alokasi dari Sisa Kas', status: '✅ Dihitung otomatis', jumlah: 0, editable: false },
+                            { nama: 'Dana Tambahan', status: '🗓️ Masukkan status', jumlah: 0, editable: true }
+                        ]
                     },
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
                 }
@@ -703,6 +714,15 @@
             if (prioritasUtama) {
                  prioritasUtama.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
+            
+            // Update komponen dana strategis yang dihitung otomatis
+            if (data.danaStrategis && data.danaStrategis.komponen) {
+                const komponenOtomatis = data.danaStrategis.komponen.find(k => k.editable === false);
+                if (komponenOtomatis) {
+                    komponenOtomatis.jumlah = prioritasUtama ? prioritasUtama.jumlah : 0;
+                }
+            }
+
 
             data.dashboard = {
                 pemasukan: totalPemasukanLiquid,
@@ -786,28 +806,35 @@
             }
             
             section.style.display = 'block';
-            
-            const danaDariSisaKas = data.alokasi.find(item => item.nama === 'Dana Kuliah')?.jumlah || 0;
-            const danaDariOrtu = data.pemasukan.find(item => item.sumber === 'Cicilan dari Orang Tua')?.jumlah || 0;
-            
-            const komponen = [
-                { nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: danaDariSisaKas },
-                { nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: danaDariOrtu }
-            ];
 
-            const totalDanaSiaga = komponen.reduce((sum, item) => sum + item.jumlah, 0);
+            const totalDanaSiaga = strategicData.komponen.reduce((sum, item) => sum + item.jumlah, 0);
             const targetDana = strategicData.target;
             const progressPercentage = targetDana > 0 ? Math.min((totalDanaSiaga / targetDana) * 100, 100) : 0;
 
-            const componentsHTML = komponen.map(item => `
-                <li class="component-item">
-                    <div>
-                        <span class="component-name">${item.nama}</span>
-                        <span class="component-status">${item.status}</span>
-                    </div>
-                    <span class="component-amount">${formatCurrency(item.jumlah)}</span>
-                </li>
-            `).join('');
+            const componentsHTML = strategicData.komponen.map((item, index) => {
+                if (item.editable) {
+                    return `
+                    <li class="component-item">
+                        <div>
+                            <span class="component-name" contenteditable="true" data-type="danaStrategisKomponen" data-index="${index}" data-field="nama">${item.nama}</span>
+                            <span class="component-status" contenteditable="true" data-type="danaStrategisKomponen" data-index="${index}" data-field="status">${item.status}</span>
+                        </div>
+                        <span class="component-amount">
+                            <span contenteditable="true" data-type="danaStrategisKomponen" data-index="${index}" data-field="jumlah">${formatCurrency(item.jumlah)}</span>
+                            <button class="delete-btn" data-type="danaStrategisKomponen" data-index="${index}" style="padding: 0 5px;">&#128465;</button>
+                        </span>
+                    </li>`;
+                } else {
+                     return `
+                    <li class="component-item">
+                        <div>
+                            <span class="component-name">${item.nama}</span>
+                            <span class="component-status">${item.status}</span>
+                        </div>
+                        <span class="component-amount">${formatCurrency(item.jumlah)}</span>
+                    </li>`;
+                }
+            }).join('');
 
             container.innerHTML = `
                 <div class="strategic-fund-card">
@@ -820,6 +847,7 @@
                     <ul class="component-list">
                         ${componentsHTML}
                     </ul>
+                    <button id="add-component-btn" class="add-row-btn" style="width:100%; margin-top: 10px;">+ Tambah Komponen Dana</button>
                     <div class="summary">
                         Total Dana Siaga: <span class="total-fund">${formatCurrency(totalDanaSiaga)}</span>
                     </div>
@@ -976,6 +1004,13 @@
                 window.print();
                 return;
             }
+            if (target.id === 'add-component-btn' && event.type === 'click') {
+                const monthKey = availableMonths[currentMonthIndex];
+                financeData[monthKey].danaStrategis.komponen.push({ nama: 'Komponen Baru', status: 'Masukkan status', jumlah: 0, editable: true });
+                saveDataToLocalStorage();
+                recalculateAndRender();
+                return;
+            }
 
             const dataType = target.dataset.type;
             if (!dataType) return;
@@ -1004,13 +1039,23 @@
                 
                 if (dataType === 'danaStrategis') {
                     if (field === 'target') {
-                        data[dataType][field] = parseCurrency(target.textContent);
+                        data.danaStrategis[field] = parseCurrency(target.textContent);
                         needsRecalculate = true;
                     } else {
-                        data[dataType][field] = target.textContent;
+                        data.danaStrategis[field] = target.textContent;
                     }
                     needsSave = true;
-                } else if (dataType === 'alokasi') {
+                } else if (dataType === 'danaStrategisKomponen') {
+                    const index = parseInt(target.dataset.index, 10);
+                    if(field === 'jumlah') {
+                        data.danaStrategis.komponen[index][field] = parseCurrency(target.textContent);
+                        needsRecalculate = true;
+                    } else {
+                        data.danaStrategis.komponen[index][field] = target.textContent;
+                    }
+                    needsSave = true;
+                }
+                else if (dataType === 'alokasi') {
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = target.textContent;
                     needsSave = true;
@@ -1033,7 +1078,11 @@
             } else if (target.classList.contains('delete-btn')) {
                 const index = parseInt(target.dataset.index, 10);
                 if (confirm('Anda yakin ingin menghapus baris ini?')) {
-                    data[dataType].splice(index, 1);
+                    if (dataType === 'danaStrategisKomponen') {
+                         data.danaStrategis.komponen.splice(index, 1);
+                    } else {
+                        data[dataType].splice(index, 1);
+                    }
                     needsRecalculate = true;
                     needsSave = true;
                 }
