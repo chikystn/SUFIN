@@ -61,6 +61,8 @@
             align-items: center;
             margin-bottom: 40px;
             gap: 15px;
+            /* BARU: Memungkinkan elemen pindah baris jika tidak cukup ruang */
+            flex-wrap: wrap;
         }
 
         .month-navigation button {
@@ -96,6 +98,8 @@
             color: var(--text-color);
             width: 220px;
             text-align: center;
+            /* BARU: Memastikan display bulan mengambil ruang yang diperlukan */
+            flex-shrink: 0;
         }
 
         .dashboard {
@@ -285,6 +289,21 @@
         
         .table-wrapper {
             overflow-x: auto;
+            /* BARU: Menambahkan posisi relatif untuk pseudo-element */
+            position: relative;
+        }
+
+        /* BARU: Indikator visual untuk tabel yang bisa di-scroll */
+        .table-wrapper.is-scrollable::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 30px;
+            pointer-events: none;
+            background: linear-gradient(to right, transparent, var(--card-bg));
+            transition: opacity 0.2s;
         }
 
         table {
@@ -297,14 +316,21 @@
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
+            white-space: nowrap; /* Mencegah teks terpotong di tengah kata */
             word-wrap: break-word;
             hyphens: auto;
             vertical-align: top;
         }
+        
+        td:first-child, th:first-child {
+             white-space: normal; /* Mengizinkan kolom pertama untuk wrap */
+        }
+
 
         td[contenteditable="true"], [contenteditable="true"] {
             cursor: text;
             background-color: #374151;
+            white-space: normal;
         }
         td[contenteditable="true"]:focus, [contenteditable="true"]:focus {
             background-color: #4b5563;
@@ -672,6 +698,9 @@
             
             document.getElementById('prev-month-btn').disabled = (currentMonthIndex === 0);
             document.getElementById('next-month-btn').disabled = (currentMonthIndex === availableMonths.length - 1);
+            
+            // BARU: Panggil fungsi pengecekan overflow setelah render
+            checkTableOverflow();
         }
 
         function renderAllocationDetails(alokasiData) {
@@ -760,7 +789,7 @@
             pemasukanData.forEach((item, index) => {
                 const statusOptions = ['liquid', 'illiquid', 'none'];
                 const optionsHTML = statusOptions.map(opt =>
-                    `<option value="${opt}" ${item.status === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
+                    `<option value="${opt}" ${item.status.toLowerCase() === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
                 ).join('');
 
                 const row = `
@@ -883,6 +912,18 @@
                 }
             });
         }
+
+        // BARU: Fungsi untuk mengecek dan menandai tabel yang overflow
+        function checkTableOverflow() {
+            const wrappers = document.querySelectorAll('.table-wrapper');
+            wrappers.forEach(wrapper => {
+                if (wrapper.scrollWidth > wrapper.clientWidth) {
+                    wrapper.classList.add('is-scrollable');
+                } else {
+                    wrapper.classList.remove('is-scrollable');
+                }
+            });
+        }
         
         function handleContentAction(event) {
             const target = event.target;
@@ -910,10 +951,11 @@
                 needsSave = true;
             } else if (target.hasAttribute('contenteditable') && event.type === 'blur') {
                 const field = target.dataset.field;
-                if (dataType === 'danaStrategis') {
-                    data[dataType][field] = target.textContent;
+                if (dataType === 'danaStrategis' || dataType === 'alokasi') {
+                    const index = parseInt(target.dataset.index, 10);
+                    data[dataType][index][field] = target.textContent;
                     needsSave = true;
-                } 
+                }
                 else if (dataType === 'rencanaAksi') { 
                     const index = parseInt(target.dataset.index, 10);
                     const pointIndex = target.dataset.pointIndex; 
@@ -1006,6 +1048,9 @@
             Chart.defaults.borderColor = '#374151';
 
             recalculateAndRender();
+
+            // BARU: Event listener untuk window resize
+            window.addEventListener('resize', checkTableOverflow);
 
             document.getElementById('reset-data-btn').addEventListener('click', () => {
                 if (confirm('PERINGATAN: Aksi ini akan menghapus semua perubahan yang telah Anda simpan dan mengembalikan data ke kondisi awal. Lanjutkan?')) {
