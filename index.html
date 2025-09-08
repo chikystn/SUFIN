@@ -284,15 +284,15 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            min-width: 600px; 
         }
 
         th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            word-break: break-word;
+            word-wrap: break-word;
             hyphens: auto;
+            vertical-align: top;
         }
 
         td[contenteditable="true"] {
@@ -307,7 +307,6 @@
         th {
             background-color: #374151;
             font-weight: 600;
-            white-space: nowrap;
         }
 
         tbody tr:last-child td {
@@ -348,20 +347,33 @@
             background-color: var(--success-color);
             color: white; border: none;
             padding: 8px 15px; border-radius: 8px;
-            font-size: 0.9rem; font-weight: 600;
-            cursor: pointer; margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
         }
         .add-row-btn:hover { background-color: #059669; }
 
         .status {
-            padding: 4px 8px; border-radius: 6px;
-            font-weight: 600; font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
             display: inline-block;
             white-space: nowrap;
         }
         .status.likuid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
         .status.non-likuid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
         
+        .selisih-hemat {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+        .selisih-boros {
+            color: var(--danger-color);
+            font-weight: 600;
+        }
+
         .sop-section { padding: 0; }
         .sop-item { padding: 20px; border-bottom: 1px solid var(--border-color); }
         .sop-item:last-child { border-bottom: none; }
@@ -370,8 +382,10 @@
         .sop-item li { margin-bottom: 5px; }
 
         footer {
-            text-align: center; margin-top: 40px;
-            padding: 20px; color: var(--secondary-color);
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: var(--secondary-color);
             font-size: 0.9rem;
         }
 
@@ -484,7 +498,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Kategori</th><th>Item</th><th>Anggaran</th><th>Aktual (Terpakai)</th><th>Catatan</th><th>Aksi</th>
+                            <th>Kategori</th><th>Item</th><th>Anggaran</th><th>Aktual (Terpakai)</th><th>Selisih</th><th>Catatan</th><th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="expense-table-body"></tbody>
@@ -506,6 +520,25 @@
     </div>
 
     <script>
+        // --- PUSAT DATA KEUANGAN (DEFAULT) ---
+        const defaultFinanceData = {
+            "2025-09": {
+                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'likuid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'likuid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'non-likuid' } ],
+                pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
+                alokasi: [ 
+                    { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
+                    { nama: 'Investasi (RDPU)', jumlah: 200000, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Untuk pertumbuhan aset jangka panjang.', strategi: 'Bisa dicairkan dalam 1-2 hari jika darurat.' }, 
+                    { nama: 'Buffer Cash', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana darurat mikro untuk kebutuhan kecil.', strategi: 'Simpan tunai atau di e-wallet.' } 
+                ],
+                danaStrategis: {
+                    judul: "Dana Siaga Pembayaran Kuliah",
+                    target: 1500000,
+                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak sebesar Rp 1,5 Juta."
+                },
+                rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
+            },
+            // ... (Bulan-bulan berikutnya akan dibuat kosong saat inisialisasi jika tidak ada data)
+        };
         let financeData; 
 
         // --- VARIABEL GLOBAL ---
@@ -524,9 +557,9 @@
                     pemasukan: [],
                     pengeluaran: [],
                     alokasi: [
-                        { nama: 'Investasi', jumlah: 0, target: 0, warna: '#28a745', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
-                        { nama: 'Dana Darurat', jumlah: 0, persentase: 10, target: 0, warna: '#ffc107', ikon: '🛡️', deskripsi: 'Dana untuk kebutuhan tak terduga.', strategi: 'Simpan di tempat yang mudah diakses.' } ,
-                        { nama: 'Sisa Kas', jumlah: 0, target: 0, warna: '#007bff', ikon: '💰', deskripsi: 'Sisa dana setelah alokasi lain.', strategi: 'Bisa digunakan untuk tujuan lain atau ditabung.' },
+                        { nama: 'Investasi', jumlah: 0, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
+                        { nama: 'Dana Darurat', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana untuk kebutuhan tak terduga.', strategi: 'Simpan di tempat yang mudah diakses.' } ,
+                        { nama: 'Sisa Kas', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '💰', deskripsi: 'Sisa dana setelah alokasi lain.', strategi: 'Bisa digunakan untuk tujuan lain atau ditabung.' },
                     ],
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
                 }
@@ -556,12 +589,11 @@
             const rasioTabungan = totalPemasukanLikuid > 0 ? (sisaKas / totalPemasukanLikuid) * 100 : 0;
             const sisaUangRiil = totalPemasukanLikuid - totalRealisasi;
 
-            // Logika alokasi dinamis sesuai prioritas
             let sisaKasUntukDialokasikan = sisaKas;
             
             data.alokasi.forEach(item => {
                 if (item.persentase) {
-                    item.jumlah = sisaKas * (item.persentase / 100);
+                    item.jumlah = Math.max(0, sisaKas * (item.persentase / 100));
                     sisaKasUntukDialokasikan -= item.jumlah;
                 }
             });
@@ -722,22 +754,31 @@
             const tableBody = document.getElementById('expense-table-body');
             tableBody.innerHTML = '';
             pengeluaranData.forEach((item, index) => {
+                const aktual = item.aktual || 0;
+                const selisih = item.anggaran - aktual;
+                const selisihClass = selisih >= 0 ? 'selisih-hemat' : 'selisih-boros';
                 const row = `
                     <tr>
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="kategori">${item.kategori}</td>
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="item">${item.item}</td>
                         <td><input type="text" class="editable-amount" value="${formatCurrency(item.anggaran)}" data-type="pengeluaran" data-index="${index}" data-field="anggaran"></td>
-                        <td><input type="text" class="editable-amount" value="${formatCurrency(item.aktual || 0)}" data-type="pengeluaran" data-index="${index}" data-field="aktual"></td>
+                        <td><input type="text" class="editable-amount" value="${formatCurrency(aktual)}" data-type="pengeluaran" data-index="${index}" data-field="aktual"></td>
+                        <td class="${selisihClass}">${formatCurrency(selisih)}</td>
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="catatan">${item.catatan}</td>
                         <td><button class="delete-btn" data-type="pengeluaran" data-index="${index}">&#128465;</button></td>
                     </tr>`;
                 tableBody.innerHTML += row;
             });
+
+            const totalAktual = pengeluaranData.reduce((sum, item) => sum + (item.aktual || 0), 0);
+            const totalSelisih = totalPengeluaran - totalAktual;
+            const totalSelisihClass = totalSelisih >= 0 ? 'selisih-hemat' : 'selisih-boros';
              document.getElementById('expense-table-foot').innerHTML = `
                 <tr>
                     <td colspan="2">TOTAL</td>
                     <td>${formatCurrency(totalPengeluaran)}</td>
-                    <td>${formatCurrency(pengeluaranData.reduce((sum, item) => sum + (item.aktual || 0), 0))}</td>
+                    <td>${formatCurrency(totalAktual)}</td>
+                    <td class="${totalSelisihClass}">${formatCurrency(totalSelisih)}</td>
                     <td colspan="2"></td>
                 </tr>`;
         }
@@ -895,14 +936,7 @@
             if (savedData) {
                 financeData = JSON.parse(savedData);
             } else {
-                const today = new Date();
-                const currentYear = today.getFullYear();
-                let newYearData = {};
-                for (let i = 0; i < 12; i++) {
-                    const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
-                    Object.assign(newYearData, createEmptyMonthData(monthKey));
-                }
-                financeData = newYearData;
+                financeData = JSON.parse(JSON.stringify(defaultFinanceData)); // Gunakan data contoh sebagai default
                 saveDataToLocalStorage();
             }
             availableMonths = Object.keys(financeData);
