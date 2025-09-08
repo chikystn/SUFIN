@@ -282,7 +282,7 @@
             font-weight: 600;
             margin-top: 20px;
         }
-       
+        
         .table-wrapper {
             overflow-x: auto;
         }
@@ -371,6 +371,31 @@
         }
         .status.liquid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
         .status.illiquid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
+        .status.none { background-color: rgba(107, 114, 128, 0.2); color: #9ca3af; } /* BARU: Gaya untuk status 'none' */
+
+        /* BARU: Gaya untuk dropdown status agar sesuai tema */
+        .status-select {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 8px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+        .status-select:focus {
+            outline: 2px solid var(--primary-color);
+            border-color: var(--primary-color);
+        }
         
         .selisih-hemat {
             color: var(--success-color);
@@ -742,13 +767,26 @@
             const tableBody = document.getElementById('income-table-body');
             tableBody.innerHTML = '';
             pemasukanData.forEach((item, index) => {
+                // --- AWAL PERUBAHAN ---
+                // Membuat opsi untuk dropdown
+                const statusOptions = ['liquid', 'illiquid', 'none'];
+                const optionsHTML = statusOptions.map(opt =>
+                    `<option value="${opt}" ${item.status === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
+                ).join('');
+
                 const row = `
                     <tr>
                         <td contenteditable="true" data-type="pemasukan" data-index="${index}" data-field="sumber">${item.sumber}</td>
                         <td><input type="text" class="editable-amount" value="${formatCurrency(item.jumlah)}" data-type="pemasukan" data-index="${index}" data-field="jumlah"></td>
-                        <td><span class="status ${item.status}">${item.status.replace('-', ' ')}</span></td>
+                        <td>
+                            <!-- Mengganti span dengan select (dropdown) -->
+                            <select class="status-select" data-type="pemasukan" data-index="${index}" data-field="status">
+                                ${optionsHTML}
+                            </select>
+                        </td>
                         <td><button class="delete-btn" data-type="pemasukan" data-index="${index}">&#128465;</button></td>
                     </tr>`;
+                // --- AKHIR PERUBAHAN ---
                 tableBody.innerHTML += row;
             });
             document.getElementById('income-table-foot').innerHTML = `
@@ -868,7 +906,17 @@
             let needsRecalculate = false;
             let needsSave = false;
 
-            if (target.classList.contains('editable-amount') && event.type === 'change') {
+            // --- AWAL PERUBAHAN ---
+            // Menambahkan blok untuk menangani perubahan pada dropdown status
+            if (target.tagName === 'SELECT' && event.type === 'change') {
+                const index = parseInt(target.dataset.index, 10);
+                const field = target.dataset.field;
+                data[dataType][index][field] = target.value;
+                needsRecalculate = true; // Perlu kalkulasi ulang karena total liquid berubah
+                needsSave = true;
+            } 
+            // --- AKHIR PERUBAHAN ---
+            else if (target.classList.contains('editable-amount') && event.type === 'change') {
                 const index = parseInt(target.dataset.index, 10);
                 const field = target.dataset.field;
                 data[dataType][index][field] = parseCurrency(target.value);
@@ -904,7 +952,8 @@
             if (currentMonthIndex > 0) { currentMonthIndex--; recalculateAndRender(); }
         });
         document.getElementById('add-income-btn').addEventListener('click', () => {
-            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'liquid' });
+            // DIUBAH: Status default untuk pemasukan baru adalah 'none'
+            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'none' });
             saveDataToLocalStorage();
             recalculateAndRender();
         });
