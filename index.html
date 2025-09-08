@@ -302,13 +302,14 @@
             vertical-align: top;
         }
 
-        td[contenteditable="true"] {
+        td[contenteditable="true"], [contenteditable="true"] {
             cursor: text;
             background-color: #374151;
         }
-        td[contenteditable="true"]:focus {
+        td[contenteditable="true"]:focus, [contenteditable="true"]:focus {
             background-color: #4b5563;
             outline: 2px solid var(--primary-color);
+            border-radius: 4px;
         }
         
         th {
@@ -361,19 +362,10 @@
         }
         .add-row-btn:hover { background-color: #059669; }
 
-        .status {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.8rem;
-            display: inline-block;
-            white-space: nowrap;
-        }
-        .status.Liquid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
-        .status.Illiquid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
-        .status.none { background-color: rgba(107, 114, 128, 0.2); color: #9ca3af; } /* BARU: Gaya untuk status 'none' */
+        .status.liquid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
+        .status.illiquid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
+        .status.none { background-color: rgba(107, 114, 128, 0.2); color: #9ca3af; }
 
-        /* BARU: Gaya untuk dropdown status agar sesuai tema */
         .status-select {
             background-color: var(--card-bg);
             color: var(--text-color);
@@ -555,7 +547,7 @@
         // --- PUSAT DATA KEUANGAN (DEFAULT) ---
         const defaultFinanceData = {
             "2025-09": {
-                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'Liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'Illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'Illiquid' } ],
+                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid' } ],
                 pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
                 alokasi: [ 
                     { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
@@ -569,7 +561,6 @@
                 },
                 rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
             },
-            // ... (Bulan-bulan berikutnya akan dibuat kosong saat inisialisasi jika tidak ada data)
         };
         let financeData; 
 
@@ -614,7 +605,7 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
             
-            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'Liquid' ? sum + item.jumlah : sum, 0);
+            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'liquid' ? sum + item.jumlah : sum, 0);
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
             const sisaKas = totalPemasukanLiquid - totalPengeluaran;
@@ -686,7 +677,7 @@
         function renderAllocationDetails(alokasiData) {
             const container = document.getElementById('allocation-details-container');
             container.innerHTML = '';
-            alokasiData.forEach(item => {
+            alokasiData.forEach((item, index) => {
                 let progressHTML = '';
                 if (item.target > 0) {
                     const progressPercentage = Math.min((item.jumlah / item.target) * 100, 100);
@@ -700,12 +691,12 @@
                 const persenNote = item.persentase ? `<div class="note-persen">(${item.persentase}% dari Sisa Kas)</div>` : '';
                 const cardHTML = `
                     <div class="allocation-card">
-                        <h3>${item.ikon} ${item.nama}</h3>
+                        <h3>${item.ikon} <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="nama">${item.nama}</span></h3>
                         <div class="amount">${formatCurrency(item.jumlah)}</div>
                         ${persenNote}
                         ${progressHTML}
-                        <p><strong>Tujuan:</strong> ${item.deskripsi}</p>
-                        <p><strong>Strategi:</strong> ${item.strategi}</p>
+                        <p><strong>Tujuan:</strong> <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="deskripsi">${item.deskripsi}</span></p>
+                        <p><strong>Strategi:</strong> <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="strategi">${item.strategi}</span></p>
                     </div>`;
                 container.innerHTML += cardHTML;
             });
@@ -767,7 +758,7 @@
             const tableBody = document.getElementById('income-table-body');
             tableBody.innerHTML = '';
             pemasukanData.forEach((item, index) => {
-                const statusOptions = ['Liquid', 'Illiquid', 'none'];
+                const statusOptions = ['liquid', 'illiquid', 'none'];
                 const optionsHTML = statusOptions.map(opt =>
                     `<option value="${opt}" ${item.status === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
                 ).join('');
@@ -824,7 +815,6 @@
                 </tr>`;
         }
 
-        // --- AWAL PERUBAHAN ---
         function renderRencanaAksi(rencanaData) {
             const container = document.getElementById('rencana-aksi-section');
             if(!rencanaData) {
@@ -845,7 +835,6 @@
                 container.appendChild(sopItem);
             });
         }
-        // --- AKHIR PERUBAHAN ---
         
         function updateAllocationChart(alokasiData) {
             if (allocationChart) allocationChart.destroy();
@@ -923,8 +912,8 @@
                 const field = target.dataset.field;
                 if (dataType === 'danaStrategis') {
                     data[dataType][field] = target.textContent;
+                    needsSave = true;
                 } 
-                // --- AWAL PERUBAHAN ---
                 else if (dataType === 'rencanaAksi') { 
                     const index = parseInt(target.dataset.index, 10);
                     const pointIndex = target.dataset.pointIndex; 
@@ -934,13 +923,13 @@
                     } else if (field === 'judul') {
                         data.rencanaAksi[index].judul = target.textContent;
                     }
+                    needsSave = true;
                 } 
-                // --- AKHIR PERUBAHAN ---
                 else {
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = target.textContent;
+                    needsSave = true;
                 }
-                 needsSave = true;
             } else if (target.classList.contains('delete-btn')) {
                 const index = parseInt(target.dataset.index, 10);
                 if (confirm('Anda yakin ingin menghapus baris ini?')) {
