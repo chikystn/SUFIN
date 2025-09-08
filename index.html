@@ -327,7 +327,6 @@
             cursor: text;
             background-color: #374151;
             white-space: normal;
-            /* BARU: Indikator visual bahwa teks bisa diedit */
             border-bottom: 1px dotted var(--secondary-color);
             padding: 0 2px;
         }
@@ -335,7 +334,7 @@
             background-color: #4b5563;
             outline: 2px solid var(--primary-color);
             border-radius: 4px;
-            border-bottom-color: transparent; /* Hilangkan garis bawah saat diedit */
+            border-bottom-color: transparent;
         }
         
         th {
@@ -475,7 +474,6 @@
             .editable-amount { min-width: 80px; }
         }
 
-        /* BARU: CSS untuk format cetak */
         @media print {
             body > *:not(.strategic-fund-section) {
                 display: none;
@@ -624,13 +622,13 @@
                 pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
                 alokasi: [ 
                     { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
-                    { nama: 'Investasi (RDPU)', jumlah: 200000, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Untuk pertumbuhan aset jangka panjang.', strategi: 'Bisa dicairkan dalam 1-2 hari jika darurat.' }, 
+                    { nama: 'Investasi', jumlah: 0, persentase: 23.8, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Untuk pertumbuhan aset jangka panjang.', strategi: 'Bisa dicairkan dalam 1-2 hari jika darurat.' }, 
                     { nama: 'Buffer Cash', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana darurat mikro untuk kebutuhan kecil.', strategi: 'Simpan tunai atau di e-wallet.' } 
                 ],
                 danaStrategis: {
                     judul: "Dana Siaga Pembayaran Kuliah",
                     target: 1500000,
-                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak sebesar Rp 1,5 Juta."
+                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak."
                 },
                 rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
             },
@@ -653,10 +651,15 @@
                     pemasukan: [],
                     pengeluaran: [],
                     alokasi: [
-                        { nama: 'Investasi', jumlah: 0, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
-                        { nama: 'Dana Darurat', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana untuk kebutuhan tak terduga.', strategi: 'Simpan di tempat yang mudah diakses.' } ,
-                        { nama: 'Sisa Kas', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '💰', deskripsi: 'Sisa dana setelah alokasi lain.', strategi: 'Bisa digunakan untuk tujuan lain atau ditabung.' },
+                        { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini.', strategi: 'Disimpan di rekening terpisah.' },
+                        { nama: 'Investasi', jumlah: 0, persentase: 23.8, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
+                        { nama: 'Dana Darurat', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana untuk kebutuhan tak terduga.', strategi: 'Simpan di tempat yang mudah diakses.' }
                     ],
+                    danaStrategis: {
+                        judul: "Dana Siaga Pembayaran Kuliah",
+                        target: 1500000,
+                        deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak."
+                    },
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
                 }
             };
@@ -686,22 +689,17 @@
             const sisaUangRiil = totalPemasukanLiquid - totalRealisasi;
 
             let sisaKasUntukDialokasikan = sisaKas;
-            
+
+            // Prioritas 1 & 2: Alokasi berdasarkan persentase
             data.alokasi.forEach(item => {
                 if (item.persentase) {
                     item.jumlah = Math.max(0, sisaKas * (item.persentase / 100));
                     sisaKasUntukDialokasikan -= item.jumlah;
                 }
             });
-
-             data.alokasi.forEach(item => {
-                const isPrioritasUtama = item.nama === 'Dana Kuliah' || item.nama === 'Sisa Kas';
-                if (!item.persentase && !isPrioritasUtama) {
-                    sisaKasUntukDialokasikan -= item.jumlah;
-                }
-            });
-
-            const prioritasUtama = data.alokasi.find(item => item.nama === 'Dana Kuliah' || item.nama === 'Sisa Kas');
+            
+            // Prioritas 3: Sisa dana dialokasikan ke pos utama
+            const prioritasUtama = data.alokasi.find(item => !item.persentase && (item.nama === 'Dana Kuliah' || item.nama === 'Sisa Kas'));
             if (prioritasUtama) {
                  prioritasUtama.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
