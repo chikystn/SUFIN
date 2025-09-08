@@ -369,8 +369,8 @@
             display: inline-block;
             white-space: nowrap;
         }
-        .status.liquid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
-        .status.illiquid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
+        .status.Liquid { background-color: rgba(16, 185, 129, 0.2); color: #a7f3d0; }
+        .status.Illiquid { background-color: rgba(245, 158, 11, 0.2); color: #fde68a; }
         .status.none { background-color: rgba(107, 114, 128, 0.2); color: #9ca3af; } /* BARU: Gaya untuk status 'none' */
 
         /* BARU: Gaya untuk dropdown status agar sesuai tema */
@@ -555,7 +555,7 @@
         // --- PUSAT DATA KEUANGAN (DEFAULT) ---
         const defaultFinanceData = {
             "2025-09": {
-                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid' } ],
+                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'Liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'Illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'Illiquid' } ],
                 pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
                 alokasi: [ 
                     { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
@@ -614,7 +614,7 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
             
-            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'liquid' ? sum + item.jumlah : sum, 0);
+            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'Liquid' ? sum + item.jumlah : sum, 0);
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
             const sisaKas = totalPemasukanLiquid - totalPengeluaran;
@@ -767,7 +767,7 @@
             const tableBody = document.getElementById('income-table-body');
             tableBody.innerHTML = '';
             pemasukanData.forEach((item, index) => {
-                const statusOptions = ['liquid', 'illiquid', 'none'];
+                const statusOptions = ['Liquid', 'Illiquid', 'none'];
                 const optionsHTML = statusOptions.map(opt =>
                     `<option value="${opt}" ${item.status === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
                 ).join('');
