@@ -49,7 +49,7 @@
         }
 
         header h1 {
-            font-size: clamp(2rem, 8vw, 2.5rem);
+            font-size: clamp(1.8rem, 8vw, 2.5rem);
             font-weight: 700;
             color: var(--text-color);
             margin-bottom: 0;
@@ -61,7 +61,6 @@
             align-items: center;
             margin-bottom: 40px;
             gap: 15px;
-            /* BARU: Memungkinkan elemen pindah baris jika tidak cukup ruang */
             flex-wrap: wrap;
         }
 
@@ -98,7 +97,6 @@
             color: var(--text-color);
             width: 220px;
             text-align: center;
-            /* BARU: Memastikan display bulan mengambil ruang yang diperlukan */
             flex-shrink: 0;
         }
 
@@ -178,7 +176,7 @@
             border-top: 1px solid var(--border-color);
         }
         .allocation-card {
-            background-color: #374151; /* Lebih gelap dari card utama */
+            background-color: #374151;
             border-radius: 10px;
             padding: 20px;
             border: 1px solid var(--border-color);
@@ -213,7 +211,7 @@
             color: var(--secondary-color);
         }
         .progress-bar-container {
-            background-color: #4b5563; /* Latar progress bar gelap */
+            background-color: #4b5563;
             border-radius: 50px;
             height: 12px;
             width: 100%;
@@ -236,7 +234,7 @@
         }
 
         .strategic-fund-card {
-            background-color: rgba(59, 130, 246, 0.1); /* Latar biru transparan */
+            background-color: rgba(59, 130, 246, 0.1);
             border: 2px solid var(--primary-color);
             border-radius: 12px;
             padding: 25px;
@@ -289,11 +287,9 @@
         
         .table-wrapper {
             overflow-x: auto;
-            /* BARU: Menambahkan posisi relatif untuk pseudo-element */
             position: relative;
         }
 
-        /* BARU: Indikator visual untuk tabel yang bisa di-scroll */
         .table-wrapper.is-scrollable::after {
             content: '';
             position: absolute;
@@ -316,23 +312,23 @@
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
-            white-space: nowrap; /* Mencegah teks terpotong di tengah kata */
+            white-space: nowrap;
             word-wrap: break-word;
             hyphens: auto;
             vertical-align: top;
         }
         
-        td:first-child, th:first-child {
-             white-space: normal; /* Mengizinkan kolom pertama untuk wrap */
+        td:first-child, th:first-child,
+        td[data-field="catatan"] {
+             white-space: normal;
         }
 
-
-        td[contenteditable="true"], [contenteditable="true"] {
+        [contenteditable="true"] {
             cursor: text;
             background-color: #374151;
             white-space: normal;
         }
-        td[contenteditable="true"]:focus, [contenteditable="true"]:focus {
+        [contenteditable="true"]:focus {
             background-color: #4b5563;
             outline: 2px solid var(--primary-color);
             border-radius: 4px;
@@ -461,12 +457,18 @@
             #current-month-display { width: 150px; }
             .month-navigation button { padding: 8px 12px; font-size: 0.9rem; }
             .card, .section, .strategic-fund-card { padding: 20px; }
-            th, td { padding: 10px 8px; font-size: 0.9rem; }
+            th, td { padding: 10px 8px; font-size: 0.85rem; }
         }
 
         @media (max-width: 480px) {
+            body { padding: 5px; }
+            .container { padding: 0 5px; }
             .dashboard { gap: 15px; }
-            #current-month-display { width: auto; flex-grow: 1; }
+            #current-month-display { width: 100%; order: -1; margin-bottom: 10px; }
+            .card, .section, .strategic-fund-card { padding: 15px; }
+            .section h2 { font-size: 1.3rem; }
+            .card .amount { font-size: 1.4rem; }
+            .editable-amount { min-width: 80px; }
         }
 
     </style>
@@ -631,7 +633,7 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
             
-            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'liquid' ? sum + item.jumlah : sum, 0);
+            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status.toLowerCase() === 'liquid' ? sum + item.jumlah : sum, 0);
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
             const sisaKas = totalPemasukanLiquid - totalPengeluaran;
@@ -699,7 +701,6 @@
             document.getElementById('prev-month-btn').disabled = (currentMonthIndex === 0);
             document.getElementById('next-month-btn').disabled = (currentMonthIndex === availableMonths.length - 1);
             
-            // BARU: Panggil fungsi pengecekan overflow setelah render
             checkTableOverflow();
         }
 
@@ -789,7 +790,7 @@
             pemasukanData.forEach((item, index) => {
                 const statusOptions = ['liquid', 'illiquid', 'none'];
                 const optionsHTML = statusOptions.map(opt =>
-                    `<option value="${opt}" ${item.status.toLowerCase() === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
+                    `<option value="${opt}" ${item.status && item.status.toLowerCase() === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
                 ).join('');
 
                 const row = `
@@ -913,7 +914,6 @@
             });
         }
 
-        // BARU: Fungsi untuk mengecek dan menandai tabel yang overflow
         function checkTableOverflow() {
             const wrappers = document.querySelectorAll('.table-wrapper');
             wrappers.forEach(wrapper => {
@@ -951,12 +951,15 @@
                 needsSave = true;
             } else if (target.hasAttribute('contenteditable') && event.type === 'blur') {
                 const field = target.dataset.field;
-                if (dataType === 'danaStrategis' || dataType === 'alokasi') {
+                
+                if (dataType === 'danaStrategis') {
+                    data[dataType][field] = target.textContent;
+                    needsSave = true;
+                } else if (dataType === 'alokasi') {
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = target.textContent;
                     needsSave = true;
-                }
-                else if (dataType === 'rencanaAksi') { 
+                } else if (dataType === 'rencanaAksi') { 
                     const index = parseInt(target.dataset.index, 10);
                     const pointIndex = target.dataset.pointIndex; 
 
@@ -967,7 +970,7 @@
                     }
                     needsSave = true;
                 } 
-                else {
+                else { // Handles 'pemasukan' and 'pengeluaran' text fields
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = target.textContent;
                     needsSave = true;
@@ -1049,7 +1052,6 @@
 
             recalculateAndRender();
 
-            // BARU: Event listener untuk window resize
             window.addEventListener('resize', checkTableOverflow);
 
             document.getElementById('reset-data-btn').addEventListener('click', () => {
