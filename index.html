@@ -530,7 +530,7 @@
         // --- PUSAT DATA KEUANGAN (DEFAULT) ---
         const defaultFinanceData = {
             "2025-09": {
-                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'likuid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'likuid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'non-likuid' } ],
+                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid' } ],
                 pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
                 alokasi: [ 
                     { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
@@ -589,12 +589,12 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
             
-            const totalPemasukanLikuid = data.pemasukan.reduce((sum, item) => item.status === 'likuid' ? sum + item.jumlah : sum, 0);
+            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status === 'liquid' ? sum + item.jumlah : sum, 0);
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
-            const sisaKas = totalPemasukanLikuid - totalPengeluaran;
-            const rasioTabungan = totalPemasukanLikuid > 0 ? (sisaKas / totalPemasukanLikuid) * 100 : 0;
-            const sisaUangRiil = totalPemasukanLikuid - totalRealisasi;
+            const sisaKas = totalPemasukanLiquid - totalPengeluaran;
+            const rasioTabungan = totalPemasukanLiquid > 0 ? (sisaKas / totalPemasukanLiquid) * 100 : 0;
+            const sisaUangRiil = totalPemasukanLiquid - totalRealisasi;
 
             let sisaKasUntukDialokasikan = sisaKas;
             
@@ -618,7 +618,7 @@
             }
 
             data.dashboard = {
-                pemasukan: totalPemasukanLikuid,
+                pemasukan: totalPemasukanLiquid,
                 pengeluaran: totalPengeluaran,
                 realisasi: totalRealisasi,
                 sisaKas: sisaKas,
@@ -703,7 +703,7 @@
             
             const komponen = [
                 { nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: danaDariSisaKas },
-                { nama: 'Dana dari Ortu', status: '🗓️ Belum Likuid (bertahap)', jumlah: danaDariOrtu }
+                { nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: danaDariOrtu }
             ];
 
             const totalDanaSiaga = komponen.reduce((sum, item) => sum + item.jumlah, 0);
@@ -753,7 +753,7 @@
             });
             document.getElementById('income-table-foot').innerHTML = `
                 <tr>
-                    <td>TOTAL KAS LIKUID</td><td>${formatCurrency(totalPemasukan)}</td><td colspan="2"></td>
+                    <td>TOTAL KAS LIQUID</td><td>${formatCurrency(totalPemasukan)}</td><td colspan="2"></td>
                 </tr>`;
         }
         
@@ -904,7 +904,7 @@
             if (currentMonthIndex > 0) { currentMonthIndex--; recalculateAndRender(); }
         });
         document.getElementById('add-income-btn').addEventListener('click', () => {
-            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'likuid' });
+            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'liquid' });
             saveDataToLocalStorage();
             recalculateAndRender();
         });
