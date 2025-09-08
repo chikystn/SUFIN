@@ -767,8 +767,6 @@
             const tableBody = document.getElementById('income-table-body');
             tableBody.innerHTML = '';
             pemasukanData.forEach((item, index) => {
-                // --- AWAL PERUBAHAN ---
-                // Membuat opsi untuk dropdown
                 const statusOptions = ['liquid', 'illiquid', 'none'];
                 const optionsHTML = statusOptions.map(opt =>
                     `<option value="${opt}" ${item.status === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
@@ -779,14 +777,12 @@
                         <td contenteditable="true" data-type="pemasukan" data-index="${index}" data-field="sumber">${item.sumber}</td>
                         <td><input type="text" class="editable-amount" value="${formatCurrency(item.jumlah)}" data-type="pemasukan" data-index="${index}" data-field="jumlah"></td>
                         <td>
-                            <!-- Mengganti span dengan select (dropdown) -->
                             <select class="status-select" data-type="pemasukan" data-index="${index}" data-field="status">
                                 ${optionsHTML}
                             </select>
                         </td>
                         <td><button class="delete-btn" data-type="pemasukan" data-index="${index}">&#128465;</button></td>
                     </tr>`;
-                // --- AKHIR PERUBAHAN ---
                 tableBody.innerHTML += row;
             });
             document.getElementById('income-table-foot').innerHTML = `
@@ -828,6 +824,7 @@
                 </tr>`;
         }
 
+        // --- AWAL PERUBAHAN ---
         function renderRencanaAksi(rencanaData) {
             const container = document.getElementById('rencana-aksi-section');
             if(!rencanaData) {
@@ -838,14 +835,17 @@
             while (container.children.length > 1) {
                 container.removeChild(container.lastChild);
             }
-            rencanaData.forEach(item => {
+            rencanaData.forEach((item, index) => {
                 const sopItem = document.createElement('div');
                 sopItem.className = 'sop-item';
-                const pointsHtml = item.poin.map(p => `<li>${p}</li>`).join('');
-                sopItem.innerHTML = `<h4>${item.judul}</h4><ul>${pointsHtml}</ul>`;
+                const pointsHtml = item.poin.map((p, pointIndex) => 
+                    `<li contenteditable="true" data-type="rencanaAksi" data-index="${index}" data-point-index="${pointIndex}">${p}</li>`
+                ).join('');
+                sopItem.innerHTML = `<h4 contenteditable="true" data-type="rencanaAksi" data-index="${index}" data-field="judul">${item.judul}</h4><ul>${pointsHtml}</ul>`;
                 container.appendChild(sopItem);
             });
         }
+        // --- AKHIR PERUBAHAN ---
         
         function updateAllocationChart(alokasiData) {
             if (allocationChart) allocationChart.destroy();
@@ -856,7 +856,7 @@
                     datasets: [{
                         data: alokasiData.map(item => item.jumlah),
                         backgroundColor: alokasiData.map(item => item.warna),
-                        borderColor: '#1f2937' /* Warna background kartu */, 
+                        borderColor: '#1f2937',
                         borderWidth: 4
                     }]
                 },
@@ -906,16 +906,13 @@
             let needsRecalculate = false;
             let needsSave = false;
 
-            // --- AWAL PERUBAHAN ---
-            // Menambahkan blok untuk menangani perubahan pada dropdown status
             if (target.tagName === 'SELECT' && event.type === 'change') {
                 const index = parseInt(target.dataset.index, 10);
                 const field = target.dataset.field;
                 data[dataType][index][field] = target.value;
-                needsRecalculate = true; // Perlu kalkulasi ulang karena total liquid berubah
+                needsRecalculate = true;
                 needsSave = true;
             } 
-            // --- AKHIR PERUBAHAN ---
             else if (target.classList.contains('editable-amount') && event.type === 'change') {
                 const index = parseInt(target.dataset.index, 10);
                 const field = target.dataset.field;
@@ -926,7 +923,20 @@
                 const field = target.dataset.field;
                 if (dataType === 'danaStrategis') {
                     data[dataType][field] = target.textContent;
-                } else {
+                } 
+                // --- AWAL PERUBAHAN ---
+                else if (dataType === 'rencanaAksi') { 
+                    const index = parseInt(target.dataset.index, 10);
+                    const pointIndex = target.dataset.pointIndex; 
+
+                    if (pointIndex !== undefined) {
+                        data.rencanaAksi[index].poin[parseInt(pointIndex, 10)] = target.textContent;
+                    } else if (field === 'judul') {
+                        data.rencanaAksi[index].judul = target.textContent;
+                    }
+                } 
+                // --- AKHIR PERUBAHAN ---
+                else {
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = target.textContent;
                 }
@@ -952,7 +962,6 @@
             if (currentMonthIndex > 0) { currentMonthIndex--; recalculateAndRender(); }
         });
         document.getElementById('add-income-btn').addEventListener('click', () => {
-            // DIUBAH: Status default untuk pemasukan baru adalah 'none'
             financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'none' });
             saveDataToLocalStorage();
             recalculateAndRender();
@@ -1004,7 +1013,6 @@
             }
             availableMonths = Object.keys(financeData);
 
-            // Set up global chart styles for dark mode
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.borderColor = '#374151';
 
