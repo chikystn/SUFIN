@@ -327,11 +327,15 @@
             cursor: text;
             background-color: #374151;
             white-space: normal;
+            /* BARU: Indikator visual bahwa teks bisa diedit */
+            border-bottom: 1px dotted var(--secondary-color);
+            padding: 0 2px;
         }
         [contenteditable="true"]:focus {
             background-color: #4b5563;
             outline: 2px solid var(--primary-color);
             border-radius: 4px;
+            border-bottom-color: transparent; /* Hilangkan garis bawah saat diedit */
         }
         
         th {
@@ -471,6 +475,47 @@
             .editable-amount { min-width: 80px; }
         }
 
+        /* BARU: CSS untuk format cetak */
+        @media print {
+            body > *:not(.strategic-fund-section) {
+                display: none;
+            }
+
+            .strategic-fund-section {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .strategic-fund-card {
+                background-color: white !important;
+                color: black !important;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+            }
+
+            .strategic-fund-card * {
+                color: black !important;
+                background-color: transparent !important;
+            }
+
+            .progress-bar-container {
+                background-color: #eee !important;
+            }
+            
+            .progress-bar {
+                background-color: var(--primary-color) !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            #print-card-btn {
+                display: none !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -512,7 +557,7 @@
         </section>
 
         <!-- SEKSI BARU UNTUK DANA STRATEGIS -->
-        <section class="section" id="strategic-fund-section" style="display: none;">
+        <section class="section strategic-fund-section" id="strategic-fund-section" style="display: none;">
              <h2>Detail Dana Strategis</h2>
              <div id="strategic-fund-container"></div>
         </section>
@@ -770,7 +815,7 @@
                 <div class="strategic-fund-card">
                     <h3>💰 <span contenteditable="true" data-type="danaStrategis" data-field="judul">${strategicData.judul}</span></h3>
                     <p contenteditable="true" data-type="danaStrategis" data-field="deskripsi">${strategicData.deskripsi}</p>
-                     <div class="target-info">Terkumpul: <strong>${formatCurrency(totalDanaSiaga)}</strong> dari ${formatCurrency(targetDana)}</div>
+                     <div class="target-info">Terkumpul: <strong>${formatCurrency(totalDanaSiaga)}</strong> dari <span contenteditable="true" data-type="danaStrategis" data-field="target">${formatCurrency(targetDana)}</span></div>
                     <div class="progress-bar-container" style="margin-bottom: 20px;">
                         <div class="progress-bar" style="width: ${progressPercentage}%;"></div>
                     </div>
@@ -780,6 +825,7 @@
                     <div class="summary">
                         Total Dana Siaga: <span class="total-fund">${formatCurrency(totalDanaSiaga)}</span>
                     </div>
+                    <button id="print-card-btn" class="add-row-btn" style="width:100%; margin-top: 20px; background-color: var(--info-color);">Cetak Kartu Dana</button>
                 </div>
             `;
         }
@@ -927,6 +973,12 @@
         
         function handleContentAction(event) {
             const target = event.target;
+
+            if (target.id === 'print-card-btn' && event.type === 'click') {
+                window.print();
+                return;
+            }
+
             const dataType = target.dataset.type;
             if (!dataType) return;
 
@@ -953,7 +1005,12 @@
                 const field = target.dataset.field;
                 
                 if (dataType === 'danaStrategis') {
-                    data[dataType][field] = target.textContent;
+                    if (field === 'target') {
+                        data[dataType][field] = parseCurrency(target.textContent);
+                        needsRecalculate = true;
+                    } else {
+                        data[dataType][field] = target.textContent;
+                    }
                     needsSave = true;
                 } else if (dataType === 'alokasi') {
                     const index = parseInt(target.dataset.index, 10);
