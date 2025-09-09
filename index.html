@@ -300,7 +300,8 @@
             position: relative;
         }
 
-        .table-wrapper.is-scrollable::after {
+        /* PERBAIKAN FINAL: Aturan bayangan untuk scroll */
+        .table-wrapper::after {
             content: '';
             position: absolute;
             top: 0;
@@ -310,6 +311,10 @@
             pointer-events: none;
             background: linear-gradient(to right, transparent, var(--card-bg));
             transition: opacity 0.2s;
+            opacity: 0;
+        }
+        .table-wrapper.is-scrollable::after {
+            opacity: 1;
         }
 
         table {
@@ -363,11 +368,10 @@
             font-family: inherit;
             font-size: inherit;
             color: inherit;
-            /* PERBAIKAN: Hapus width: 100% agar tidak menyebabkan lipatan */
             min-width: 100px;
             padding: 4px;
             border-radius: 4px;
-            box-sizing: border-box; /* Pastikan padding tidak menambah lebar */
+            box-sizing: border-box;
         }
         .editable-amount:focus {
             outline: none;
@@ -492,41 +496,6 @@
                 padding: 10px 8px;
                 font-size: 0.85rem;
             }
-
-            /* --- Mencegah kolom 'gepeng' dan terlipat di HP (PERBAIKAN FINAL) --- */
-            
-            /* Aturan default untuk semua kolom: JANGAN TERLIPAT */
-            [data-table-name] th, [data-table-name] td {
-                white-space: nowrap;
-            }
-
-            /* Izinkan HANYA kolom teks spesifik untuk membuat baris baru */
-            [data-table-name="pemasukan"] th:nth-child(1), 
-            [data-table-name="pemasukan"] td:nth-child(1),
-            [data-table-name="pengeluaran"] th:nth-child(1), 
-            [data-table-name="pengeluaran"] td:nth-child(1),
-            [data-table-name="pengeluaran"] th:nth-child(2), 
-            [data-table-name="pengeluaran"] td:nth-child(2),
-            [data-table-name="pengeluaran"] th:nth-child(6), 
-            [data-table-name="pengeluaran"] td:nth-child(6) {
-                white-space: normal;
-            }
-
-            /* Tabel Pemasukan */
-            [data-table-name="pemasukan"] th:nth-child(1), [data-table-name="pemasukan"] td:nth-child(1) { min-width: 130px; } /* Sumber */
-            [data-table-name="pemasukan"] th:nth-child(2), [data-table-name="pemasukan"] td:nth-child(2) { min-width: 110px; } /* Jumlah */
-            [data-table-name="pemasukan"] th:nth-child(3), [data-table-name="pemasukan"] td:nth-child(3) { min-width: 100px; } /* Status */
-            [data-table-name="pemasukan"] th:nth-child(4), [data-table-name="pemasukan"] td:nth-child(4) { min-width: 70px; text-align: center; } /* Strategis */
-            [data-table-name="pemasukan"] th:nth-child(5), [data-table-name="pemasukan"] td:nth-child(5) { min-width: 50px; } /* Aksi */
-
-            /* Tabel Pengeluaran */
-            [data-table-name="pengeluaran"] th:nth-child(1), [data-table-name="pengeluaran"] td:nth-child(1) { min-width: 120px; } /* Kategori */
-            [data-table-name="pengeluaran"] th:nth-child(2), [data-table-name="pengeluaran"] td:nth-child(2) { min-width: 120px; } /* Item */
-            [data-table-name="pengeluaran"] th:nth-child(3), [data-table-name="pengeluaran"] td:nth-child(3) { min-width: 110px; } /* Anggaran */
-            [data-table-name="pengeluaran"] th:nth-child(4), [data-table-name="pengeluaran"] td:nth-child(4) { min-width: 110px; } /* Aktual */
-            [data-table-name="pengeluaran"] th:nth-child(5), [data-table-name="pengeluaran"] td:nth-child(5) { min-width: 110px; } /* Selisih */
-            [data-table-name="pengeluaran"] th:nth-child(6), [data-table-name="pengeluaran"] td:nth-child(6) { min-width: 150px; } /* Catatan */
-            [data-table-name="pengeluaran"] th:nth-child(7), [data-table-name="pengeluaran"] td:nth-child(7) { min-width: 50px; } /* Aksi */
         }
 
         @media (max-width: 480px) {
@@ -1066,9 +1035,9 @@
         }
 
         function checkTableOverflow() {
-            const wrappers = document.querySelectorAll('.table-wrapper');
-            wrappers.forEach(wrapper => {
-                if (wrapper.scrollWidth > wrapper.clientWidth) {
+            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+                const isScrollable = wrapper.scrollWidth > wrapper.clientWidth;
+                if (isScrollable) {
                     wrapper.classList.add('is-scrollable');
                 } else {
                     wrapper.classList.remove('is-scrollable');
@@ -1273,6 +1242,19 @@
                 checkTableOverflow();
                 updateHeadersForMobileView();
             });
+
+            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+                wrapper.addEventListener('scroll', () => {
+                    const isScrolled = wrapper.scrollLeft > 0;
+                    const isAtEnd = wrapper.scrollWidth - wrapper.scrollLeft === wrapper.clientWidth;
+                    if (isAtEnd) {
+                        wrapper.classList.remove('is-scrollable');
+                    } else {
+                        wrapper.classList.add('is-scrollable');
+                    }
+                });
+            });
+
 
             document.getElementById('reset-data-btn').addEventListener('click', () => {
                 if (confirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?')) {
