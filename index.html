@@ -448,6 +448,15 @@
         .sop-item ul { padding-left: 20px; margin: 0; color: var(--secondary-color); }
         .sop-item li { margin-bottom: 5px; }
 
+        .mobile-scroll-hint {
+            display: none;
+            font-size: 0.8rem;
+            color: var(--secondary-color);
+            text-align: right;
+            margin-bottom: -10px;
+            padding-right: 10px;
+        }
+
         footer {
             text-align: center;
             margin-top: 40px;
@@ -478,7 +487,27 @@
             #current-month-display { width: 150px; }
             .month-navigation button { padding: 8px 12px; font-size: 0.9rem; }
             .card, .section, .strategic-fund-card { padding: 20px; }
-            th, td { padding: 10px 8px; font-size: 0.85rem; }
+            
+            .mobile-scroll-hint {
+                display: block;
+            }
+
+            th, td {
+                padding: 10px 8px;
+                font-size: 0.85rem;
+            }
+
+            #income-table-body td:nth-child(1), #income-table-body th:nth-child(1) {
+                white-space: normal;
+                min-width: 100px;
+            }
+            
+            #expense-table-body td:nth-child(1), #expense-table-body th:nth-child(1),
+            #expense-table-body td:nth-child(2), #expense-table-body th:nth-child(2),
+            #expense-table-body td:nth-child(6), #expense-table-body th:nth-child(6) {
+                white-space: normal;
+                min-width: 100px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -489,7 +518,7 @@
             .card, .section, .strategic-fund-card { padding: 15px; }
             .section h2 { font-size: 1.3rem; }
             .card .amount { font-size: 1.4rem; }
-            .editable-amount { min-width: 80px; }
+            .editable-amount { min-width: 90px; }
         }
 
         @media print {
@@ -588,6 +617,7 @@
 
         <section class="section">
             <h2>Rincian Pemasukan & Dana Tersedia</h2>
+            <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
             <div class="table-wrapper">
                 <table>
                     <thead>
@@ -604,6 +634,7 @@
 
         <section class="section">
             <h2>Rincian & Analisis Pengeluaran</h2>
+            <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
              <div class="chart-container">
                 <canvas id="expenseChart"></canvas>
             </div>
