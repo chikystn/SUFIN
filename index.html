@@ -633,27 +633,7 @@
     </div>
 
     <script>
-        // --- PUSAT DATA KEUANGAN (DEFAULT) ---
-        const defaultFinanceData = {
-            "2025-09": {
-                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid', untukDanaStrategis: false }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid', untukDanaStrategis: true }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid', untukDanaStrategis: false } ],
-                pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
-                alokasi: [ 
-                    { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
-                    { nama: 'Investasi', jumlah: 0, persentase: 23.8, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Untuk pertumbuhan aset jangka panjang.', strategi: 'Bisa dicairkan dalam 1-2 hari jika darurat.' }, 
-                    { nama: 'Buffer Cash', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana darurat mikro untuk kebutuhan kecil.', strategi: 'Simpan tunai atau di e-wallet.' } 
-                ],
-                danaStrategis: {
-                    judul: "Dana Siaga Pembayaran Kuliah",
-                    target: 1500000,
-                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak.",
-                    komponen: [
-                        { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 }
-                    ]
-                },
-                rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
-            },
-        };
+        // --- PUSAT DATA KEUANGAN ---
         let financeData; 
 
         // --- VARIABEL GLOBAL ---
@@ -1202,10 +1182,22 @@
             if (savedData) {
                 financeData = JSON.parse(savedData);
             } else {
-                financeData = defaultFinanceData;
+                const today = new Date();
+                const currentYear = today.getFullYear();
+                let newYearData = {};
+                for (let i = 0; i < 12; i++) {
+                    const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+                    Object.assign(newYearData, createEmptyMonthData(monthKey));
+                }
+                financeData = newYearData;
                 saveDataToLocalStorage();
             }
             availableMonths = Object.keys(financeData).sort();
+            
+            const today = new Date();
+            const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const startingIndex = availableMonths.indexOf(currentMonthKey);
+            currentMonthIndex = startingIndex !== -1 ? startingIndex : 0;
 
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.borderColor = '#374151';
@@ -1215,7 +1207,7 @@
             window.addEventListener('resize', checkTableOverflow);
 
             document.getElementById('reset-data-btn').addEventListener('click', () => {
-                if (confirm('PERINGATAN: Aksi ini akan menghapus semua perubahan yang telah Anda simpan dan mengembalikan data ke kondisi awal. Lanjutkan?')) {
+                if (confirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?')) {
                     localStorage.removeItem(STORAGE_KEY);
                     location.reload();
                 }
