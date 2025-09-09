@@ -73,7 +73,7 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color: 0.2s ease;
+            transition: background-color 0.2s ease;
         }
 
         .month-navigation button#add-month-btn {
@@ -723,7 +723,7 @@
                 }
             });
             
-            const prioritasUtama = data.alokasi.find(item => !item.persentase && (item.nama === 'Dana Kuliah' || item.nama === 'Sisa Kas'));
+            const prioritasUtama = data.alokasi.find(item => item.persentase === undefined);
             if (prioritasUtama) {
                  prioritasUtama.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
@@ -816,15 +816,17 @@
                         </div>
                     `;
                 }
-                const persenNote = item.persentase ? `<div class="note-persen">(${item.persentase}% dari Sisa Kas)</div>` : '';
+                const persenNote = item.persentase !== undefined ? 
+                    `<div class="note-persen">(<span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="persentase">${item.persentase}</span>% dari Sisa Kas)</div>` 
+                    : '';
                 const cardHTML = `
                     <div class="allocation-card">
                         <h3>${item.ikon} <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="nama">${item.nama}</span></h3>
                         <div class="amount">${formatCurrency(item.jumlah)}</div>
                         ${persenNote}
                         ${progressHTML}
-                        <p><strong>Tujuan:</strong> <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="deskripsi">${item.deskripsi}</span></p>
-                        <p><strong>Strategi:</strong> <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="strategi">${item.strategi}</span></p>
+                        <p><strong>Tujuan:</strong> ${item.deskripsi}</p>
+                        <p><strong>Strategi:</strong> ${item.strategi}</p>
                     </div>`;
                 container.innerHTML += cardHTML;
             });
@@ -1086,7 +1088,6 @@
                 const field = target.dataset.field;
                 const value = parseCurrency(target.value);
                 if (dataType === 'danaStrategisKomponen') {
-                    // Find the original component by ID to edit, because the rendered index might not match the stored index after filtering.
                     const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
                     const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === componentId);
                     if(componentToUpdate) componentToUpdate[field] = value;
@@ -1105,7 +1106,7 @@
                     } else {
                         data[dataType][field] = value;
                     }
-                    needsRecalculate = true; // Recalculate for progress bar
+                    needsRecalculate = true;
                     needsSave = true;
                 } else if (dataType === 'danaStrategisKomponen') {
                     const index = parseInt(target.dataset.index, 10);
@@ -1116,10 +1117,16 @@
                     needsSave = true;
                 } else if (dataType === 'alokasi') {
                     const index = parseInt(target.dataset.index, 10);
-                    data[dataType][index][field] = value;
+                    if (field === 'persentase') {
+                        data.alokasi[index][field] = parseFloat(value.replace(',', '.')) || 0;
+                        needsRecalculate = true;
+                    } else {
+                        data.alokasi[index][field] = value;
+                        if (field === 'nama') {
+                             needsRecalculate = true;
+                        }
+                    }
                     needsSave = true;
-                    recalculateAndRender(); // Recalculate if alokasi name changes for chart
-                    return;
                 } else if (dataType === 'rencanaAksi') { 
                     const index = parseInt(target.dataset.index, 10);
                     const pointIndex = target.dataset.pointIndex; 
@@ -1131,7 +1138,7 @@
                     }
                     needsSave = true;
                 } 
-                else { // Handles 'pemasukan' and 'pengeluaran' text fields
+                else { 
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = value;
                     needsRecalculate = true;
@@ -1225,4 +1232,5 @@
 
 </body>
 </html>
+
 
