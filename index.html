@@ -363,10 +363,11 @@
             font-family: inherit;
             font-size: inherit;
             color: inherit;
-            width: 100%;
+            /* PERBAIKAN: Hapus width: 100% agar tidak menyebabkan lipatan */
             min-width: 100px;
             padding: 4px;
             border-radius: 4px;
+            box-sizing: border-box; /* Pastikan padding tidak menambah lebar */
         }
         .editable-amount:focus {
             outline: none;
@@ -492,13 +493,22 @@
                 font-size: 0.85rem;
             }
 
-            /* --- Mencegah kolom 'gepeng' dan terlipat di HP --- */
+            /* --- Mencegah kolom 'gepeng' dan terlipat di HP (PERBAIKAN FINAL) --- */
             
-            /* Izinkan kolom teks untuk wrap */
-            [data-table-name="pemasukan"] th:nth-child(1), [data-table-name="pemasukan"] td:nth-child(1),
-            [data-table-name="pengeluaran"] th:nth-child(1), [data-table-name="pengeluaran"] td:nth-child(1),
-            [data-table-name="pengeluaran"] th:nth-child(2), [data-table-name="pengeluaran"] td:nth-child(2),
-            [data-table-name="pengeluaran"] th:nth-child(6), [data-table-name="pengeluaran"] td:nth-child(6) {
+            /* Aturan default untuk semua kolom: JANGAN TERLIPAT */
+            [data-table-name] th, [data-table-name] td {
+                white-space: nowrap;
+            }
+
+            /* Izinkan HANYA kolom teks spesifik untuk membuat baris baru */
+            [data-table-name="pemasukan"] th:nth-child(1), 
+            [data-table-name="pemasukan"] td:nth-child(1),
+            [data-table-name="pengeluaran"] th:nth-child(1), 
+            [data-table-name="pengeluaran"] td:nth-child(1),
+            [data-table-name="pengeluaran"] th:nth-child(2), 
+            [data-table-name="pengeluaran"] td:nth-child(2),
+            [data-table-name="pengeluaran"] th:nth-child(6), 
+            [data-table-name="pengeluaran"] td:nth-child(6) {
                 white-space: normal;
             }
 
