@@ -73,7 +73,7 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color: 0.2s ease;
         }
 
         .month-navigation button#add-month-btn {
@@ -260,21 +260,31 @@
             align-items: center;
             padding: 10px 0;
             border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+            gap: 15px;
         }
         .strategic-fund-card .component-item:last-child {
             border-bottom: none;
         }
         .strategic-fund-card .component-name {
             font-weight: 600;
+            white-space: normal;
         }
         .strategic-fund-card .component-status {
             font-size: 0.8rem;
             color: var(--secondary-color);
             display: block;
+            white-space: normal;
         }
         .strategic-fund-card .component-amount {
             font-weight: 700;
             font-size: 1.1rem;
+            white-space: nowrap;
+        }
+        .strategic-fund-card .component-amount.editable-amount {
+            width: 120px;
+            text-align: right;
+            font-size: 1.1rem;
+            padding: 6px;
         }
         .strategic-fund-card .summary {
             background-color: rgba(59, 130, 246, 0.2);
@@ -315,7 +325,7 @@
             white-space: nowrap;
             word-wrap: break-word;
             hyphens: auto;
-            vertical-align: top;
+            vertical-align: middle;
         }
         
         td:first-child, th:first-child,
@@ -414,6 +424,14 @@
             border-color: var(--primary-color);
         }
         
+        .strategic-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--primary-color);
+            vertical-align: middle;
+        }
+        
         .selisih-hemat {
             color: var(--success-color);
             font-weight: 600;
@@ -447,7 +465,7 @@
             border-radius: 8px;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: background-color 0.2s ease;
+            transition: background-color: 0.2s ease;
         }
         #reset-data-btn:hover {
             background-color: #c82333;
@@ -509,7 +527,7 @@
                 color-adjust: exact;
             }
             
-            #print-card-btn {
+            #print-card-btn, #add-strategic-component-btn {
                 display: none !important;
             }
         }
@@ -574,7 +592,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Aksi</th>
+                            <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Strategis?</th><th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="income-table-body"></tbody>
@@ -618,7 +636,7 @@
         // --- PUSAT DATA KEUANGAN (DEFAULT) ---
         const defaultFinanceData = {
             "2025-09": {
-                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid' }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid' }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid' } ],
+                pemasukan: [ { sumber: 'Uang Saku Bulanan', jumlah: 1100000, status: 'liquid', untukDanaStrategis: false }, { sumber: 'Uang Kembali dari Teman', jumlah: 450000, status: 'illiquid', untukDanaStrategis: true }, { sumber: 'Cicilan dari Orang Tua', jumlah: 850000, status: 'illiquid', untukDanaStrategis: false } ],
                 pengeluaran: [ { kategori: 'Bimbingan Skripsi', item: 'Transportasi PP', anggaran: 120000, aktual: 0, catatan: 'BBM NMAX' }, { kategori: 'Bimbingan Skripsi', item: 'Penginapan Hemat', anggaran: 120000, aktual: 0, catatan: 'Kos Harian' }, { kategori: 'Bimbingan Skripsi', item: 'Makan & Jajan', anggaran: 80000, aktual: 0, catatan: '-' }, { kategori: 'Kebutuhan Pribadi', item: 'Potong Rambut', anggaran: 40000, aktual: 0, catatan: 'Rutin' }, { kategori: 'Kebutuhan Pribadi', item: 'Skincare Basic', anggaran: 100000, aktual: 0, catatan: 'Stok ulang' }, { kategori: 'Kewajiban', item: 'WiFi Bulanan', anggaran: 150000, aktual: 0, catatan: 'Prioritas' }, { kategori: 'Sosialisasi', item: 'First Date', anggaran: 100000, aktual: 0, catatan: 'Plafon Maksimal' } ],
                 alokasi: [ 
                     { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini untuk tujuan strategis.', strategi: 'Disimpan di rekening terpisah (Blu) agar tidak terpakai.' },
@@ -628,7 +646,11 @@
                 danaStrategis: {
                     judul: "Dana Siaga Pembayaran Kuliah",
                     target: 1500000,
-                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak."
+                    deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak.",
+                    komponen: [
+                        { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 },
+                        { id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 }
+                    ]
                 },
                 rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
             },
@@ -658,7 +680,11 @@
                     danaStrategis: {
                         judul: "Dana Siaga Pembayaran Kuliah",
                         target: 1500000,
-                        deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak."
+                        deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak.",
+                        komponen: [
+                            { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 },
+                            { id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 }
+                        ]
                     },
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
                 }
@@ -690,7 +716,6 @@
 
             let sisaKasUntukDialokasikan = sisaKas;
 
-            // Prioritas 1 & 2: Alokasi berdasarkan persentase
             data.alokasi.forEach(item => {
                 if (item.persentase) {
                     item.jumlah = Math.max(0, sisaKas * (item.persentase / 100));
@@ -698,11 +723,41 @@
                 }
             });
             
-            // Prioritas 3: Sisa dana dialokasikan ke pos utama
             const prioritasUtama = data.alokasi.find(item => !item.persentase && (item.nama === 'Dana Kuliah' || item.nama === 'Sisa Kas'));
             if (prioritasUtama) {
                  prioritasUtama.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
+
+            if (data.danaStrategis) {
+                if (!data.danaStrategis.komponen) data.danaStrategis.komponen = [];
+
+                const danaDariSisaKas = data.alokasi.find(item => item.nama === 'Dana Kuliah')?.jumlah || 0;
+                const danaDariOrtu = data.pemasukan.find(item => item.sumber === 'Cicilan dari Orang Tua')?.jumlah || 0;
+
+                const manualKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'));
+                let autoKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('auto_'));
+                
+                if (!autoKomponen.find(c => c.id === 'auto_sisa_kas')) autoKomponen.push({ id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 });
+                if (!autoKomponen.find(c => c.id === 'auto_ortu')) autoKomponen.push({ id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 });
+
+                const sisaKasComponent = autoKomponen.find(c => c.id === 'auto_sisa_kas');
+                if (sisaKasComponent) sisaKasComponent.jumlah = danaDariSisaKas;
+
+                const ortuComponent = autoKomponen.find(c => c.id === 'auto_ortu');
+                if (ortuComponent) ortuComponent.jumlah = danaDariOrtu;
+
+                const pemasukanKomponen = data.pemasukan
+                    .filter(p => p.untukDanaStrategis)
+                    .map((p, i) => ({
+                        id: `pemasukan_${i}`,
+                        nama: p.sumber,
+                        status: `Dari Pemasukan (${p.status})`,
+                        jumlah: p.jumlah
+                    }));
+
+                data.danaStrategis.komponen = [...autoKomponen, ...pemasukanKomponen, ...manualKomponen];
+            }
+
 
             data.dashboard = {
                 pemasukan: totalPemasukanLiquid,
@@ -787,27 +842,36 @@
             
             section.style.display = 'block';
             
-            const danaDariSisaKas = data.alokasi.find(item => item.nama === 'Dana Kuliah')?.jumlah || 0;
-            const danaDariOrtu = data.pemasukan.find(item => item.sumber === 'Cicilan dari Orang Tua')?.jumlah || 0;
-            
-            const komponen = [
-                { nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: danaDariSisaKas },
-                { nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: danaDariOrtu }
-            ];
-
+            const komponen = strategicData.komponen || [];
             const totalDanaSiaga = komponen.reduce((sum, item) => sum + item.jumlah, 0);
             const targetDana = strategicData.target;
             const progressPercentage = targetDana > 0 ? Math.min((totalDanaSiaga / targetDana) * 100, 100) : 0;
 
-            const componentsHTML = komponen.map(item => `
-                <li class="component-item">
-                    <div>
-                        <span class="component-name">${item.nama}</span>
-                        <span class="component-status">${item.status}</span>
-                    </div>
-                    <span class="component-amount">${formatCurrency(item.jumlah)}</span>
-                </li>
-            `).join('');
+            const componentsHTML = komponen.map((item, index) => {
+                const isAuto = item.id && (item.id.startsWith('auto_') || item.id.startsWith('pemasukan_'));
+                
+                const nameHTML = isAuto ? `<span class="component-name">${item.nama}</span>` : `<span class="component-name" contenteditable="true" data-type="danaStrategisKomponen" data-index="${index}" data-field="nama">${item.nama}</span>`;
+                const statusHTML = isAuto ? `<span class="component-status">${item.status}</span>` : `<span class="component-status" contenteditable="true" data-type="danaStrategisKomponen" data-index="${index}" data-field="status">${item.status}</span>`;
+                
+                const amountHTML = isAuto ?
+                    `<span class="component-amount">${formatCurrency(item.jumlah)}</span>` :
+                    `<input type="text" class="editable-amount component-amount" value="${formatCurrency(item.jumlah)}" data-type="danaStrategisKomponen" data-index="${index}" data-field="jumlah">`;
+
+                const deleteBtnHTML = !isAuto ? `<button class="delete-btn" data-type="danaStrategisKomponen" data-index="${index}">&#128465;</button>` : '';
+
+                return `
+                    <li class="component-item">
+                        <div>
+                            ${nameHTML}
+                            ${statusHTML}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                           ${amountHTML}
+                           ${deleteBtnHTML}
+                        </div>
+                    </li>
+                `;
+            }).join('');
 
             container.innerHTML = `
                 <div class="strategic-fund-card">
@@ -820,6 +884,7 @@
                     <ul class="component-list">
                         ${componentsHTML}
                     </ul>
+                    <button id="add-strategic-component-btn" class="add-row-btn" style="margin-top: 15px; width: 100%;">+ Tambah Komponen Manual</button>
                     <div class="summary">
                         Total Dana Siaga: <span class="total-fund">${formatCurrency(totalDanaSiaga)}</span>
                     </div>
@@ -827,6 +892,7 @@
                 </div>
             `;
         }
+
 
         function renderIncomeTable(pemasukanData, totalPemasukan) {
             const tableBody = document.getElementById('income-table-body');
@@ -846,13 +912,14 @@
                                 ${optionsHTML}
                             </select>
                         </td>
+                        <td><input type="checkbox" class="strategic-checkbox" data-type="pemasukanStrategis" data-index="${index}" ${item.untukDanaStrategis ? 'checked' : ''}></td>
                         <td><button class="delete-btn" data-type="pemasukan" data-index="${index}">&#128465;</button></td>
                     </tr>`;
                 tableBody.innerHTML += row;
             });
             document.getElementById('income-table-foot').innerHTML = `
                 <tr>
-                    <td>TOTAL KAS LIQUID</td><td>${formatCurrency(totalPemasukan)}</td><td colspan="2"></td>
+                    <td>TOTAL KAS LIQUID</td><td>${formatCurrency(totalPemasukan)}</td><td colspan="3"></td>
                 </tr>`;
         }
         
@@ -977,6 +1044,22 @@
                 return;
             }
 
+            if (target.id === 'add-strategic-component-btn' && event.type === 'click') {
+                const monthKey = availableMonths[currentMonthIndex];
+                const data = financeData[monthKey];
+                if (data.danaStrategis && data.danaStrategis.komponen) {
+                    data.danaStrategis.komponen.push({
+                        id: 'manual_' + Date.now(),
+                        nama: 'Komponen Baru',
+                        status: 'Keterangan',
+                        jumlah: 0
+                    });
+                    saveDataToLocalStorage();
+                    recalculateAndRender();
+                }
+                return;
+            }
+
             const dataType = target.dataset.type;
             if (!dataType) return;
 
@@ -986,7 +1069,12 @@
             let needsRecalculate = false;
             let needsSave = false;
 
-            if (target.tagName === 'SELECT' && event.type === 'change') {
+            if (dataType === 'pemasukanStrategis' && target.tagName === 'INPUT' && target.type === 'checkbox') {
+                const index = parseInt(target.dataset.index, 10);
+                data.pemasukan[index].untukDanaStrategis = target.checked;
+                needsRecalculate = true;
+                needsSave = true;
+            } else if (target.tagName === 'SELECT' && event.type === 'change') {
                 const index = parseInt(target.dataset.index, 10);
                 const field = target.dataset.field;
                 data[dataType][index][field] = target.value;
@@ -996,44 +1084,68 @@
             else if (target.classList.contains('editable-amount') && event.type === 'change') {
                 const index = parseInt(target.dataset.index, 10);
                 const field = target.dataset.field;
-                data[dataType][index][field] = parseCurrency(target.value);
+                const value = parseCurrency(target.value);
+                if (dataType === 'danaStrategisKomponen') {
+                    // Find the original component by ID to edit, because the rendered index might not match the stored index after filtering.
+                    const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
+                    const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === componentId);
+                    if(componentToUpdate) componentToUpdate[field] = value;
+                } else {
+                    data[dataType][index][field] = value;
+                }
                 needsRecalculate = true;
                 needsSave = true;
             } else if (target.hasAttribute('contenteditable') && event.type === 'blur') {
                 const field = target.dataset.field;
+                const value = target.textContent;
                 
                 if (dataType === 'danaStrategis') {
                     if (field === 'target') {
-                        data[dataType][field] = parseCurrency(target.textContent);
-                        needsRecalculate = true;
+                        data[dataType][field] = parseCurrency(value);
                     } else {
-                        data[dataType][field] = target.textContent;
+                        data[dataType][field] = value;
                     }
+                    needsRecalculate = true; // Recalculate for progress bar
+                    needsSave = true;
+                } else if (dataType === 'danaStrategisKomponen') {
+                    const index = parseInt(target.dataset.index, 10);
+                    const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
+                    const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === componentId);
+                    if (componentToUpdate) componentToUpdate[field] = value;
+                    needsRecalculate = true;
                     needsSave = true;
                 } else if (dataType === 'alokasi') {
                     const index = parseInt(target.dataset.index, 10);
-                    data[dataType][index][field] = target.textContent;
+                    data[dataType][index][field] = value;
                     needsSave = true;
+                    recalculateAndRender(); // Recalculate if alokasi name changes for chart
+                    return;
                 } else if (dataType === 'rencanaAksi') { 
                     const index = parseInt(target.dataset.index, 10);
                     const pointIndex = target.dataset.pointIndex; 
 
                     if (pointIndex !== undefined) {
-                        data.rencanaAksi[index].poin[parseInt(pointIndex, 10)] = target.textContent;
+                        data.rencanaAksi[index].poin[parseInt(pointIndex, 10)] = value;
                     } else if (field === 'judul') {
-                        data.rencanaAksi[index].judul = target.textContent;
+                        data.rencanaAksi[index].judul = value;
                     }
                     needsSave = true;
                 } 
                 else { // Handles 'pemasukan' and 'pengeluaran' text fields
                     const index = parseInt(target.dataset.index, 10);
-                    data[dataType][index][field] = target.textContent;
+                    data[dataType][index][field] = value;
+                    needsRecalculate = true;
                     needsSave = true;
                 }
             } else if (target.classList.contains('delete-btn')) {
                 const index = parseInt(target.dataset.index, 10);
                 if (confirm('Anda yakin ingin menghapus baris ini?')) {
-                    data[dataType].splice(index, 1);
+                    if (dataType === 'danaStrategisKomponen') {
+                        const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
+                        data.danaStrategis.komponen = data.danaStrategis.komponen.filter(c => c.id !== componentId);
+                    } else {
+                         data[dataType].splice(index, 1);
+                    }
                     needsRecalculate = true;
                     needsSave = true;
                 }
@@ -1051,7 +1163,7 @@
             if (currentMonthIndex > 0) { currentMonthIndex--; recalculateAndRender(); }
         });
         document.getElementById('add-income-btn').addEventListener('click', () => {
-            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'none' });
+            financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'none', untukDanaStrategis: false });
             saveDataToLocalStorage();
             recalculateAndRender();
         });
@@ -1072,7 +1184,7 @@
             const newMonthKey = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
             if (!financeData[newMonthKey]) {
                 Object.assign(financeData, createEmptyMonthData(newMonthKey));
-                availableMonths = Object.keys(financeData);
+                availableMonths = Object.keys(financeData).sort();
                 currentMonthIndex = availableMonths.length - 1;
                 saveDataToLocalStorage();
                 recalculateAndRender();
@@ -1090,17 +1202,10 @@
             if (savedData) {
                 financeData = JSON.parse(savedData);
             } else {
-                const today = new Date();
-                const currentYear = today.getFullYear();
-                let newYearData = {};
-                for (let i = 0; i < 12; i++) {
-                    const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
-                    Object.assign(newYearData, createEmptyMonthData(monthKey));
-                }
-                financeData = newYearData;
+                financeData = defaultFinanceData;
                 saveDataToLocalStorage();
             }
-            availableMonths = Object.keys(financeData);
+            availableMonths = Object.keys(financeData).sort();
 
             Chart.defaults.color = '#9ca3af';
             Chart.defaults.borderColor = '#374151';
@@ -1120,3 +1225,4 @@
 
 </body>
 </html>
+
