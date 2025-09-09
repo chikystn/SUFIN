@@ -465,7 +465,7 @@
             border-radius: 8px;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: background-color: 0.2s ease;
+            transition: background-color 0.2s ease;
         }
         #reset-data-btn:hover {
             background-color: #c82333;
@@ -648,8 +648,7 @@
                     target: 1500000,
                     deskripsi: "Ini adalah total dana gabungan dari berbagai sumber yang bisa dimobilisasi jika ada tagihan kuliah mendadak.",
                     komponen: [
-                        { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 },
-                        { id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 }
+                        { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 }
                     ]
                 },
                 rencanaAksi: [ { judul: '🎯 Aturan Disiplin September', poin: ['Fokus utama adalah patuh pada semua plafon pengeluaran.', 'Pastikan semua cicilan dari orang tua langsung dialokasikan ke dana kuliah.'] }, { judul: '📈 Target Oktober', poin: ['Mulai investasi rutin (DCA) minimal Rp100k/bulan.', 'Tantang diri: cari 1 pos pengeluaran yang bisa dihemat 10% bulan depan.'] } ]
@@ -682,8 +681,7 @@
                         target: 1500000,
                         deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak.",
                         komponen: [
-                            { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 },
-                            { id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 }
+                            { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 }
                         ]
                     },
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
@@ -732,19 +730,14 @@
                 if (!data.danaStrategis.komponen) data.danaStrategis.komponen = [];
 
                 const danaDariSisaKas = data.alokasi.find(item => item.nama === 'Dana Kuliah')?.jumlah || 0;
-                const danaDariOrtu = data.pemasukan.find(item => item.sumber === 'Cicilan dari Orang Tua')?.jumlah || 0;
 
                 const manualKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'));
                 let autoKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('auto_'));
                 
                 if (!autoKomponen.find(c => c.id === 'auto_sisa_kas')) autoKomponen.push({ id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 });
-                if (!autoKomponen.find(c => c.id === 'auto_ortu')) autoKomponen.push({ id: 'auto_ortu', nama: 'Dana dari Ortu', status: '🗓️ Belum Liquid (bertahap)', jumlah: 0 });
 
                 const sisaKasComponent = autoKomponen.find(c => c.id === 'auto_sisa_kas');
                 if (sisaKasComponent) sisaKasComponent.jumlah = danaDariSisaKas;
-
-                const ortuComponent = autoKomponen.find(c => c.id === 'auto_ortu');
-                if (ortuComponent) ortuComponent.jumlah = danaDariOrtu;
 
                 const pemasukanKomponen = data.pemasukan
                     .filter(p => p.untukDanaStrategis)
@@ -1232,5 +1225,4 @@
 
 </body>
 </html>
-
 
