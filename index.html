@@ -6,6 +6,10 @@
     <title>SUFIN|SUTAN-FINANCE</title>
     <!-- Library untuk membuat chart/grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Library untuk membuat PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
     <!-- Impor font dari Google Fonts untuk tampilan yang lebih modern -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
@@ -527,7 +531,7 @@
                 color-adjust: exact;
             }
             
-            #print-card-btn, #add-strategic-component-btn {
+            #print-card-btn, #add-strategic-component-btn, #download-pdf-btn {
                 display: none !important;
             }
         }
@@ -593,7 +597,7 @@
                 <table data-table-name="pemasukan">
                     <thead id="income-table-head">
                         <tr>
-                            <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Strategis</th><th>Aksi</th>
+                            <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Strategis?</th><th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="income-table-body"></tbody>
@@ -629,6 +633,7 @@
         
         <footer>
             <p>Dengan struktur ini, keuangan stabil dan siap bertumbuh.</p>
+            <button id="download-pdf-btn" class="add-row-btn" style="background-color: var(--info-color); margin-right: 10px;">Unduh Laporan PDF</button>
             <button id="reset-data-btn">Reset Semua Data</button>
         </footer>
 
@@ -642,6 +647,7 @@
         const STORAGE_KEY = 'petaKeuanganData';
         let currentMonthIndex = 0;
         let availableMonths;
+        const { jsPDF } = window.jspdf;
         const allocationCtx = document.getElementById('allocationChart').getContext('2d');
         const expenseCtx = document.getElementById('expenseChart').getContext('2d');
         let allocationChart;
@@ -696,6 +702,113 @@
                 expenseHeaders[3].textContent = isMobile ? 'Aktual' : 'Aktual (Terpakai)';
             }
         }
+
+        async function generatePDF() {
+            const btn = document.getElementById('download-pdf-btn');
+            btn.textContent = 'Membuat PDF...';
+            btn.disabled = true;
+
+            const monthKey = availableMonths[currentMonthIndex];
+            const data = financeData[monthKey];
+            const { dashboard, pemasukan, pengeluaran } = data;
+
+            const [year, month] = monthKey.split('-');
+            const date = new Date(year, month - 1);
+            const monthName = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+
+            const doc = new jsPDF();
+            let currentY = 22;
+
+            doc.setFontSize(18);
+            doc.text(`Laporan Keuangan - ${monthName}`, 14, currentY);
+            currentY += 15;
+
+            doc.setFontSize(12);
+            doc.text('Ringkasan Keuangan', 14, currentY);
+            currentY += 7;
+            
+            const summaryData = [
+                ['Total Pemasukan Liquid', formatCurrency(dashboard.pemasukan)],
+                ['Anggaran Pengeluaran', formatCurrency(dashboard.pengeluaran)],
+                ['Realisasi Pengeluaran', formatCurrency(dashboard.realisasi)],
+                ['Sisa Kas (Surplus)', formatCurrency(dashboard.sisaKas)],
+                ['Sisa Uang Riil', formatCurrency(dashboard.sisaUangRiil)],
+                ['Saving Rate', `${dashboard.rasioTabungan.toFixed(1)}%`],
+            ];
+
+            doc.autoTable({
+                startY: currentY,
+                body: summaryData,
+                theme: 'plain',
+                styles: { fontSize: 10 }
+            });
+            currentY = doc.autoTable.previous.finalY + 15;
+
+            // --- Tabel Pemasukan ---
+            doc.setFontSize(12);
+            doc.text('Rincian Pemasukan', 14, currentY);
+            currentY += 7;
+            doc.autoTable({
+                startY: currentY,
+                head: [['Sumber Pemasukan', 'Jumlah', 'Status']],
+                body: pemasukan.map(p => [p.sumber, formatCurrency(p.jumlah), p.status]),
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] }
+            });
+            currentY = doc.autoTable.previous.finalY + 15;
+
+            // --- Tabel Pengeluaran ---
+            doc.setFontSize(12);
+            doc.text('Rincian Pengeluaran', 14, currentY);
+            currentY += 7;
+            doc.autoTable({
+                startY: currentY,
+                head: [['Kategori', 'Item', 'Anggaran', 'Aktual', 'Selisih', 'Catatan']],
+                body: pengeluaran.map(p => [
+                    p.kategori,
+                    p.item,
+                    formatCurrency(p.anggaran),
+                    formatCurrency(p.aktual || 0),
+                    formatCurrency(p.anggaran - (p.aktual || 0)),
+                    p.catatan
+                ]),
+                theme: 'striped',
+                headStyles: { fillColor: [59, 130, 246] }
+            });
+            currentY = doc.autoTable.previous.finalY + 15;
+
+            // --- Grafik ---
+            if (currentY > 180) { // Cek jika butuh halaman baru sebelum grafik
+                doc.addPage();
+                currentY = 20;
+            }
+
+            doc.setFontSize(12);
+            doc.text('Visualisasi Data', 14, currentY);
+            currentY += 7;
+
+            const allocationCanvas = document.getElementById('allocationChart');
+            const expenseCanvas = document.getElementById('expenseChart');
+            
+            try {
+                const allocationImage = await html2canvas(allocationCanvas, { backgroundColor: null });
+                const allocationImageData = allocationImage.toDataURL('image/png');
+                doc.addImage(allocationImageData, 'PNG', 14, currentY, 80, 80);
+                
+                const expenseImage = await html2canvas(expenseCanvas, { backgroundColor: null });
+                const expenseImageData = expenseImage.toDataURL('image/png');
+                doc.addImage(expenseImageData, 'PNG', 105, currentY, 90, 80);
+            } catch (error) {
+                console.error("Error generating chart images:", error);
+                doc.text("Gagal membuat gambar grafik.", 14, currentY + 10);
+            }
+            
+            doc.save(`Laporan_Keuangan_${monthName.replace(/\s/g, '_')}.pdf`);
+            
+            btn.textContent = 'Unduh Laporan PDF';
+            btn.disabled = false;
+        }
+
 
         function recalculateAndRender() {
             const monthKey = availableMonths[currentMonthIndex];
@@ -1226,28 +1339,14 @@
                 updateHeadersForMobileView();
             });
 
-            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
-                wrapper.addEventListener('scroll', () => {
-                    const isScrolled = wrapper.scrollLeft > 0;
-                    const isAtEnd = wrapper.scrollWidth - wrapper.scrollLeft === wrapper.clientWidth;
-                    if (isAtEnd) {
-                        wrapper.classList.remove('is-scrollable');
-                    } else {
-                        wrapper.classList.add('is-scrollable');
-                    }
-                });
-            });
-
-
             document.getElementById('reset-data-btn').addEventListener('click', () => {
                 if (confirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?')) {
                     localStorage.removeItem(STORAGE_KEY);
                     location.reload();
                 }
             });
+
+            document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
         });
     </script>
-
-</body>
-</html>
 
