@@ -328,11 +328,6 @@
             vertical-align: middle;
         }
         
-        td:first-child, th:first-child,
-        td[data-field="catatan"] {
-             white-space: normal;
-        }
-
         [contenteditable="true"] {
             cursor: text;
             background-color: #374151;
@@ -498,21 +493,30 @@
             }
 
             /* --- Mencegah kolom 'gepeng' dan terlipat di HP --- */
+            
+            /* Izinkan kolom teks untuk wrap */
+            [data-table-name="pemasukan"] th:nth-child(1), [data-table-name="pemasukan"] td:nth-child(1),
+            [data-table-name="pengeluaran"] th:nth-child(1), [data-table-name="pengeluaran"] td:nth-child(1),
+            [data-table-name="pengeluaran"] th:nth-child(2), [data-table-name="pengeluaran"] td:nth-child(2),
+            [data-table-name="pengeluaran"] th:nth-child(6), [data-table-name="pengeluaran"] td:nth-child(6) {
+                white-space: normal;
+            }
+
             /* Tabel Pemasukan */
-            #income-table-body th:nth-child(1), #income-table-body td:nth-child(1) { min-width: 130px; white-space: normal; } /* Sumber */
-            #income-table-body th:nth-child(2), #income-table-body td:nth-child(2) { min-width: 110px; } /* Jumlah */
-            #income-table-body th:nth-child(3), #income-table-body td:nth-child(3) { min-width: 100px; } /* Status */
-            #income-table-body th:nth-child(4), #income-table-body td:nth-child(4) { min-width: 70px; text-align: center; } /* Strategis */
-            #income-table-body th:nth-child(5), #income-table-body td:nth-child(5) { min-width: 50px; } /* Aksi */
+            [data-table-name="pemasukan"] th:nth-child(1), [data-table-name="pemasukan"] td:nth-child(1) { min-width: 130px; } /* Sumber */
+            [data-table-name="pemasukan"] th:nth-child(2), [data-table-name="pemasukan"] td:nth-child(2) { min-width: 110px; } /* Jumlah */
+            [data-table-name="pemasukan"] th:nth-child(3), [data-table-name="pemasukan"] td:nth-child(3) { min-width: 100px; } /* Status */
+            [data-table-name="pemasukan"] th:nth-child(4), [data-table-name="pemasukan"] td:nth-child(4) { min-width: 70px; text-align: center; } /* Strategis */
+            [data-table-name="pemasukan"] th:nth-child(5), [data-table-name="pemasukan"] td:nth-child(5) { min-width: 50px; } /* Aksi */
 
             /* Tabel Pengeluaran */
-            #expense-table-body th:nth-child(1), #expense-table-body td:nth-child(1) { min-width: 120px; white-space: normal; } /* Kategori */
-            #expense-table-body th:nth-child(2), #expense-table-body td:nth-child(2) { min-width: 120px; white-space: normal; } /* Item */
-            #expense-table-body th:nth-child(3), #expense-table-body td:nth-child(3) { min-width: 110px; } /* Anggaran */
-            #expense-table-body th:nth-child(4), #expense-table-body td:nth-child(4) { min-width: 110px; } /* Aktual */
-            #expense-table-body th:nth-child(5), #expense-table-body td:nth-child(5) { min-width: 110px; } /* Selisih */
-            #expense-table-body th:nth-child(6), #expense-table-body td:nth-child(6) { min-width: 150px; white-space: normal; } /* Catatan */
-            #expense-table-body th:nth-child(7), #expense-table-body td:nth-child(7) { min-width: 50px; } /* Aksi */
+            [data-table-name="pengeluaran"] th:nth-child(1), [data-table-name="pengeluaran"] td:nth-child(1) { min-width: 120px; } /* Kategori */
+            [data-table-name="pengeluaran"] th:nth-child(2), [data-table-name="pengeluaran"] td:nth-child(2) { min-width: 120px; } /* Item */
+            [data-table-name="pengeluaran"] th:nth-child(3), [data-table-name="pengeluaran"] td:nth-child(3) { min-width: 110px; } /* Anggaran */
+            [data-table-name="pengeluaran"] th:nth-child(4), [data-table-name="pengeluaran"] td:nth-child(4) { min-width: 110px; } /* Aktual */
+            [data-table-name="pengeluaran"] th:nth-child(5), [data-table-name="pengeluaran"] td:nth-child(5) { min-width: 110px; } /* Selisih */
+            [data-table-name="pengeluaran"] th:nth-child(6), [data-table-name="pengeluaran"] td:nth-child(6) { min-width: 150px; } /* Catatan */
+            [data-table-name="pengeluaran"] th:nth-child(7), [data-table-name="pengeluaran"] td:nth-child(7) { min-width: 50px; } /* Aksi */
         }
 
         @media (max-width: 480px) {
@@ -624,8 +628,8 @@
             <h2>Rincian Pemasukan & Dana Tersedia</h2>
             <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
             <div class="table-wrapper">
-                <table>
-                    <thead>
+                <table data-table-name="pemasukan">
+                    <thead id="income-table-head">
                         <tr>
                             <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Strategis?</th><th>Aksi</th>
                         </tr>
@@ -644,8 +648,8 @@
                 <canvas id="expenseChart"></canvas>
             </div>
             <div class="table-wrapper">
-                <table>
-                    <thead>
+                <table data-table-name="pengeluaran">
+                    <thead id="expense-table-head">
                         <tr>
                             <th>Kategori</th><th>Item</th><th>Anggaran</th><th>Aktual (Terpakai)</th><th>Selisih</th><th>Catatan</th><th>Aksi</th>
                         </tr>
@@ -717,6 +721,20 @@
             return Number(String(formattedString).replace(/[^0-9]/g, ''));
         }
         
+        function updateHeadersForMobileView() {
+            const isMobile = window.innerWidth <= 768;
+            
+            const incomeHeaders = document.querySelectorAll('#income-table-head th');
+            if (incomeHeaders.length) {
+                incomeHeaders[0].textContent = isMobile ? 'Sumber' : 'Sumber Pemasukan';
+            }
+
+            const expenseHeaders = document.querySelectorAll('#expense-table-head th');
+            if (expenseHeaders.length) {
+                expenseHeaders[3].textContent = isMobile ? 'Aktual' : 'Aktual (Terpakai)';
+            }
+        }
+
         function recalculateAndRender() {
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
@@ -797,6 +815,7 @@
             document.getElementById('rasio-tabungan').textContent = `${dashboard.rasioTabungan.toFixed(1)}%`;
             document.getElementById('rasio-tabungan-note').textContent = "Dari pemasukan yang berhasil disimpan.";
 
+            updateHeadersForMobileView();
             renderAllocationDetails(data.alokasi);
             renderStrategicFund(data);
             renderIncomeTable(data.pemasukan, dashboard.pemasukan);
@@ -1240,7 +1259,10 @@
 
             recalculateAndRender();
 
-            window.addEventListener('resize', checkTableOverflow);
+            window.addEventListener('resize', () => {
+                checkTableOverflow();
+                updateHeadersForMobileView();
+            });
 
             document.getElementById('reset-data-btn').addEventListener('click', () => {
                 if (confirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?')) {
@@ -1253,5 +1275,4 @@
 
 </body>
 </html>
-
 
