@@ -300,23 +300,6 @@
             position: relative;
         }
 
-        /* PERBAIKAN FINAL: Aturan bayangan untuk scroll */
-        .table-wrapper::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            width: 30px;
-            pointer-events: none;
-            background: linear-gradient(to right, transparent, var(--card-bg));
-            transition: opacity 0.2s;
-            opacity: 0;
-        }
-        .table-wrapper.is-scrollable::after {
-            opacity: 1;
-        }
-
         table {
             width: 100%;
             border-collapse: collapse;
