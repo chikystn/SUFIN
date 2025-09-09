@@ -497,17 +497,22 @@
                 font-size: 0.85rem;
             }
 
-            #income-table-body td:nth-child(1), #income-table-body th:nth-child(1) {
-                white-space: normal;
-                min-width: 100px;
-            }
-            
-            #expense-table-body td:nth-child(1), #expense-table-body th:nth-child(1),
-            #expense-table-body td:nth-child(2), #expense-table-body th:nth-child(2),
-            #expense-table-body td:nth-child(6), #expense-table-body th:nth-child(6) {
-                white-space: normal;
-                min-width: 100px;
-            }
+            /* --- Mencegah kolom 'gepeng' dan terlipat di HP --- */
+            /* Tabel Pemasukan */
+            #income-table-body th:nth-child(1), #income-table-body td:nth-child(1) { min-width: 130px; white-space: normal; } /* Sumber */
+            #income-table-body th:nth-child(2), #income-table-body td:nth-child(2) { min-width: 110px; } /* Jumlah */
+            #income-table-body th:nth-child(3), #income-table-body td:nth-child(3) { min-width: 100px; } /* Status */
+            #income-table-body th:nth-child(4), #income-table-body td:nth-child(4) { min-width: 70px; text-align: center; } /* Strategis */
+            #income-table-body th:nth-child(5), #income-table-body td:nth-child(5) { min-width: 50px; } /* Aksi */
+
+            /* Tabel Pengeluaran */
+            #expense-table-body th:nth-child(1), #expense-table-body td:nth-child(1) { min-width: 120px; white-space: normal; } /* Kategori */
+            #expense-table-body th:nth-child(2), #expense-table-body td:nth-child(2) { min-width: 120px; white-space: normal; } /* Item */
+            #expense-table-body th:nth-child(3), #expense-table-body td:nth-child(3) { min-width: 110px; } /* Anggaran */
+            #expense-table-body th:nth-child(4), #expense-table-body td:nth-child(4) { min-width: 110px; } /* Aktual */
+            #expense-table-body th:nth-child(5), #expense-table-body td:nth-child(5) { min-width: 110px; } /* Selisih */
+            #expense-table-body th:nth-child(6), #expense-table-body td:nth-child(6) { min-width: 150px; white-space: normal; } /* Catatan */
+            #expense-table-body th:nth-child(7), #expense-table-body td:nth-child(7) { min-width: 50px; } /* Aksi */
         }
 
         @media (max-width: 480px) {
@@ -1248,4 +1253,5 @@
 
 </body>
 </html>
+
 
