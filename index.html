@@ -814,34 +814,50 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
             
-            const totalPemasukanLiquid = data.pemasukan.reduce((sum, item) => item.status.toLowerCase() === 'liquid' ? sum + item.jumlah : sum, 0);
+            // PERBAIKAN LOGIKA: Pisahkan pemasukan operasional dan strategis
+            const pemasukanOperasionalLiquid = data.pemasukan.reduce((sum, item) => {
+                if (item.status.toLowerCase() === 'liquid' && !item.untukDanaStrategis) {
+                    return sum + item.jumlah;
+                }
+                return sum;
+            }, 0);
+            
+            const totalPemasukanLiquidBruto = data.pemasukan.reduce((sum, item) => {
+                 if (item.status.toLowerCase() === 'liquid') {
+                    return sum + item.jumlah;
+                }
+                return sum;
+            }, 0);
+
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
-            const sisaKas = totalPemasukanLiquid - totalPengeluaran;
-            const rasioTabungan = totalPemasukanLiquid > 0 ? (sisaKas / totalPemasukanLiquid) * 100 : 0;
-            const sisaUangRiil = totalPemasukanLiquid - totalRealisasi;
+            
+            // Sisa kas sekarang dihitung dari dana operasional saja
+            const sisaKas = pemasukanOperasionalLiquid - totalPengeluaran;
 
-            // --- LOGIKA ALOKASI BARU (BERBASIS PERSENTASE DENGAN PEMBULATAN) ---
+            const totalPemasukanRiil = data.pemasukan.reduce((sum, item) => item.status.toLowerCase() === 'liquid' ? sum + item.jumlah : sum, 0);
+            const sisaUangRiil = totalPemasukanRiil - totalRealisasi;
+
+            // Rasio tabungan dihitung dari total yang berhasil disisihkan dibagi total pemasukan
+            const pemasukanStrategisLangsung = totalPemasukanLiquidBruto - pemasukanOperasionalLiquid;
+            const totalTabunganBulanIni = sisaKas + pemasukanStrategisLangsung;
+            const rasioTabungan = totalPemasukanLiquidBruto > 0 ? (totalTabunganBulanIni / totalPemasukanLiquidBruto) * 100 : 0;
+
+
+            // --- LOGIKA ALOKASI BERBASIS PERSENTASE DENGAN PEMBULATAN ---
             let sisaKasUntukDialokasikan = sisaKas;
             const danaSisaItem = data.alokasi.find(item => item.persentase === undefined);
             const itemDenganPersentase = data.alokasi.filter(item => item.persentase !== undefined);
 
-            // 1. Hitung alokasi berdasarkan persentase dan bulatkan, lalu kurangi dari sisa
             itemDenganPersentase.forEach(item => {
                 if (typeof item.persentase !== 'number') {
                     item.persentase = parseFloat(String(item.persentase).replace(',', '.')) || 0;
                 }
-                // Hitung alokasi berdasarkan persentase dan bulatkan
                 const alokasiBulat = Math.round(sisaKas * (item.persentase / 100));
-                
-                // Alokasikan jumlah yang sudah dibulatkan, tapi jangan lebih dari sisa kas yang ada
                 item.jumlah = Math.min(alokasiBulat, sisaKasUntukDialokasikan);
-                
-                // Kurangi sisa kas yang akan dialokasikan
                 sisaKasUntukDialokasikan -= item.jumlah;
             });
 
-            // 2. Sisa dana dialokasikan ke pos utama
             if (danaSisaItem) {
                 danaSisaItem.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
@@ -874,7 +890,7 @@
 
 
             data.dashboard = {
-                pemasukan: totalPemasukanLiquid,
+                pemasukan: totalPemasukanLiquidBruto,
                 pengeluaran: totalPengeluaran,
                 realisasi: totalRealisasi,
                 sisaKas: sisaKas,
@@ -894,13 +910,13 @@
             document.getElementById('current-month-display').textContent = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
             document.getElementById('total-pemasukan').textContent = formatCurrency(dashboard.pemasukan);
-            document.getElementById('pemasukan-note').textContent = "Total dana siap pakai bulan ini.";
+            document.getElementById('pemasukan-note').textContent = "Total dana cair diterima bulan ini.";
             document.getElementById('total-pengeluaran').textContent = `(${formatCurrency(dashboard.pengeluaran)})`;
             document.getElementById('pengeluaran-note').innerHTML = `Realisasi: <strong>${formatCurrency(dashboard.realisasi)}</strong>`;
             document.getElementById('sisa-kas').textContent = formatCurrency(dashboard.sisaKas);
-            document.getElementById('sisa-kas-note').innerHTML = `Sisa Uang Riil: <strong>${formatCurrency(dashboard.sisaUangRiil)}</strong>`;
+            document.getElementById('sisa-kas-note').innerHTML = `Surplus dari dana operasional.`;
             document.getElementById('rasio-tabungan').textContent = `${dashboard.rasioTabungan.toFixed(1)}%`;
-            document.getElementById('rasio-tabungan-note').textContent = "Dari pemasukan yang berhasil disimpan.";
+            document.getElementById('rasio-tabungan-note').textContent = "Dari total pemasukan cair.";
 
             updateHeadersForMobileView();
             renderAllocationDetails(data.alokasi);
@@ -1016,7 +1032,7 @@
         }
 
 
-        function renderIncomeTable(pemasukanData, totalPemasukan) {
+        function renderIncomeTable(pemasukanData, totalPemasukanOperasional) {
             const tableBody = document.getElementById('income-table-body');
             tableBody.innerHTML = '';
             pemasukanData.forEach((item, index) => {
@@ -1039,9 +1055,11 @@
                     </tr>`;
                 tableBody.innerHTML += row;
             });
+
+            const totalPemasukanBruto = pemasukanData.reduce((sum, item) => sum + item.jumlah, 0);
             document.getElementById('income-table-foot').innerHTML = `
                 <tr>
-                    <td>TOTAL KAS LIQUID</td><td>${formatCurrency(totalPemasukan)}</td><td colspan="3"></td>
+                    <td>TOTAL PEMASUKAN</td><td>${formatCurrency(totalPemasukanBruto)}</td><td colspan="3"></td>
                 </tr>`;
         }
         
