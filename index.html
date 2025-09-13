@@ -821,19 +821,31 @@
             const rasioTabungan = totalPemasukanLiquid > 0 ? (sisaKas / totalPemasukanLiquid) * 100 : 0;
             const sisaUangRiil = totalPemasukanLiquid - totalRealisasi;
 
+            // --- LOGIKA ALOKASI BARU (BERBASIS PERSENTASE DENGAN PEMBULATAN) ---
             let sisaKasUntukDialokasikan = sisaKas;
+            const danaSisaItem = data.alokasi.find(item => item.persentase === undefined);
+            const itemDenganPersentase = data.alokasi.filter(item => item.persentase !== undefined);
 
-            data.alokasi.forEach(item => {
-                if (item.persentase) {
-                    item.jumlah = Math.max(0, sisaKas * (item.persentase / 100));
-                    sisaKasUntukDialokasikan -= item.jumlah;
+            // 1. Hitung alokasi berdasarkan persentase dan bulatkan, lalu kurangi dari sisa
+            itemDenganPersentase.forEach(item => {
+                if (typeof item.persentase !== 'number') {
+                    item.persentase = parseFloat(String(item.persentase).replace(',', '.')) || 0;
                 }
+                // Hitung alokasi berdasarkan persentase dan bulatkan
+                const alokasiBulat = Math.round(sisaKas * (item.persentase / 100));
+                
+                // Alokasikan jumlah yang sudah dibulatkan, tapi jangan lebih dari sisa kas yang ada
+                item.jumlah = Math.min(alokasiBulat, sisaKasUntukDialokasikan);
+                
+                // Kurangi sisa kas yang akan dialokasikan
+                sisaKasUntukDialokasikan -= item.jumlah;
             });
-            
-            const prioritasUtama = data.alokasi.find(item => item.persentase === undefined);
-            if (prioritasUtama) {
-                 prioritasUtama.jumlah = Math.max(0, sisaKasUntukDialokasikan);
+
+            // 2. Sisa dana dialokasikan ke pos utama
+            if (danaSisaItem) {
+                danaSisaItem.jumlah = Math.max(0, sisaKasUntukDialokasikan);
             }
+
 
             if (data.danaStrategis) {
                 if (!data.danaStrategis.komponen) data.danaStrategis.komponen = [];
@@ -919,13 +931,18 @@
                         </div>
                     `;
                 }
-                const persenNote = item.persentase !== undefined ? 
-                    `<div class="note-persen">(<span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="persentase">${item.persentase}</span>% dari Sisa Kas)</div>` 
+
+                const isEditableByPercentage = item.persentase !== undefined;
+                const amountHTML = `<div class="amount">${formatCurrency(item.jumlah)}</div>`;
+                
+                const persenNote = isEditableByPercentage ? 
+                    `<div class="note-persen">(<span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="persentase">${item.persentase.toFixed(1)}</span>% dari Sisa Kas)</div>` 
                     : '';
+
                 const cardHTML = `
                     <div class="allocation-card">
                         <h3>${item.ikon} <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="nama">${item.nama}</span></h3>
-                        <div class="amount">${formatCurrency(item.jumlah)}</div>
+                        ${amountHTML}
                         ${persenNote}
                         ${progressHTML}
                         <p><strong>Tujuan:</strong> ${item.deskripsi}</p>
@@ -1223,11 +1240,9 @@
                     if (field === 'persentase') {
                         data.alokasi[index][field] = parseFloat(value.replace(',', '.')) || 0;
                         needsRecalculate = true;
-                    } else {
+                    } else if (field === 'nama') {
                         data.alokasi[index][field] = value;
-                        if (field === 'nama') {
-                             needsRecalculate = true;
-                        }
+                        needsRecalculate = true;
                     }
                     needsSave = true;
                 } else if (dataType === 'rencanaAksi') { 
@@ -1349,4 +1364,7 @@
             document.getElementById('download-pdf-btn').addEventListener('click', generatePDF);
         });
     </script>
+
+</body>
+</html>
 
