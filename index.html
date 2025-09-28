@@ -777,6 +777,17 @@
                 expenseHeaders[3].textContent = isMobile ? 'Aktual' : 'Aktual (Terpakai)';
             }
         }
+        
+        // PERBAIKAN: Fungsi yang hilang didefinisikan di sini
+        function checkTableOverflow() {
+            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+                const isScrollable = wrapper.scrollWidth > wrapper.clientWidth;
+                const hint = wrapper.previousElementSibling;
+                if (hint && hint.classList.contains('mobile-scroll-hint')) {
+                    hint.style.display = isScrollable ? 'block' : 'none';
+                }
+            });
+        }
 
         async function generatePDF() {
             const btn = document.getElementById('download-pdf-btn');
@@ -1006,6 +1017,7 @@
             
             document.getElementById('prev-month-btn').disabled = (currentMonthIndex === 0);
             document.getElementById('next-month-btn').disabled = (currentMonthIndex === availableMonths.length - 1);
+            checkTableOverflow();
         }
 
         function renderAllocationDetails(alokasiData) {
@@ -1346,15 +1358,21 @@
                 }
             } else if (target.classList.contains('delete-btn')) {
                 const index = parseInt(target.dataset.index, 10);
-                 // PERBAIKAN: Hapus konfirmasi yang menyebabkan error
-                if (dataType === 'danaStrategisKomponen') {
-                    const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
-                    data.danaStrategis.komponen = data.danaStrategis.komponen.filter(c => c.id !== componentId);
-                } else {
-                     data[dataType].splice(index, 1);
-                }
-                needsRecalculate = true;
-                needsSave = true;
+                
+                // PERBAIKAN: Gunakan modal kustom
+                showCustomConfirm('Anda yakin ingin menghapus baris ini?', (confirmed) => {
+                    if (confirmed) {
+                        if (dataType === 'danaStrategisKomponen') {
+                            const componentId = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'))[index].id;
+                            data.danaStrategis.komponen = data.danaStrategis.komponen.filter(c => c.id !== componentId);
+                        } else {
+                             data[dataType].splice(index, 1);
+                        }
+                        saveDataToLocalStorage();
+                        recalculateAndRender();
+                    }
+                });
+                return; // Hentikan eksekusi lebih lanjut
             }
 
             if(needsSave) saveDataToLocalStorage();
