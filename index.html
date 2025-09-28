@@ -298,7 +298,7 @@
             font-weight: 600;
             margin-top: 20px;
         }
-        
+       
         .table-wrapper {
             overflow-x: auto;
             position: relative;
@@ -570,9 +570,9 @@
                 <div class="note" id="sisa-kas-note"></div>
             </div>
              <div class="card">
-                <h3>Saving Rate</h3>
-                <div class="amount info" id="rasio-tabungan"></div>
-                <div class="note" id="rasio-tabungan-note"></div>
+                <h3>Total Aset Kumulatif</h3>
+                <div class="amount info" id="total-aset"></div>
+                <div class="note" id="total-aset-note"></div>
             </div>
         </section>
 
@@ -640,7 +640,6 @@
     </div>
 
     <script>
-        // --- PUSAT DATA KEUANGAN ---
         let financeData; 
 
         // --- VARIABEL GLOBAL ---
@@ -689,6 +688,24 @@
             return Number(String(formattedString).replace(/[^0-9]/g, ''));
         }
         
+        function calculateTotalAssets(currentIndex) {
+            let cumulativeAssets = 0;
+            for (let i = 0; i <= currentIndex; i++) {
+                const monthKey = availableMonths[i];
+                if (financeData[monthKey]) {
+                    const data = financeData[monthKey];
+                    const pemasukanLikuid = data.pemasukan.reduce((sum, item) => (item.status.toLowerCase() === 'liquid' || item.status.toLowerCase() === 'likuid') ? sum + item.jumlah : sum, 0);
+                    const pengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
+                    const sisaKasBulanIni = pemasukanLikuid - pengeluaran;
+
+                    if (sisaKasBulanIni > 0) {
+                        cumulativeAssets += sisaKasBulanIni;
+                    }
+                }
+            }
+            return cumulativeAssets;
+        }
+
         function updateHeadersForMobileView() {
             const isMobile = window.innerWidth <= 768;
             
@@ -842,6 +859,7 @@
             const pemasukanStrategisLangsung = totalPemasukanLiquidBruto - pemasukanOperasionalLiquid;
             const totalTabunganBulanIni = sisaKas + pemasukanStrategisLangsung;
             const rasioTabungan = totalPemasukanLiquidBruto > 0 ? (totalTabunganBulanIni / totalPemasukanLiquidBruto) * 100 : 0;
+            const totalAset = calculateTotalAssets(currentMonthIndex);
 
 
             // --- LOGIKA ALOKASI BERBASIS PERSENTASE DENGAN PEMBULATAN ---
@@ -895,7 +913,8 @@
                 realisasi: totalRealisasi,
                 sisaKas: sisaKas,
                 sisaUangRiil: sisaUangRiil,
-                rasioTabungan: rasioTabungan
+                rasioTabungan: rasioTabungan,
+                totalAset: totalAset
             };
 
             renderUI(monthKey);
@@ -915,8 +934,8 @@
             document.getElementById('pengeluaran-note').innerHTML = `Realisasi: <strong>${formatCurrency(dashboard.realisasi)}</strong>`;
             document.getElementById('sisa-kas').textContent = formatCurrency(dashboard.sisaKas);
             document.getElementById('sisa-kas-note').innerHTML = `Surplus dari dana operasional.`;
-            document.getElementById('rasio-tabungan').textContent = `${dashboard.rasioTabungan.toFixed(1)}%`;
-            document.getElementById('rasio-tabungan-note').textContent = "Dari total pemasukan cair.";
+            document.getElementById('total-aset').textContent = formatCurrency(dashboard.totalAset);
+            document.getElementById('total-aset-note').textContent = "Akumulasi tabungan & investasi Anda.";
 
             updateHeadersForMobileView();
             renderAllocationDetails(data.alokasi);
@@ -929,8 +948,6 @@
             
             document.getElementById('prev-month-btn').disabled = (currentMonthIndex === 0);
             document.getElementById('next-month-btn').disabled = (currentMonthIndex === availableMonths.length - 1);
-            
-            checkTableOverflow();
         }
 
         function renderAllocationDetails(alokasiData) {
@@ -1164,17 +1181,6 @@
                 }
             });
         }
-
-        function checkTableOverflow() {
-            document.querySelectorAll('.table-wrapper').forEach(wrapper => {
-                const isScrollable = wrapper.scrollWidth > wrapper.clientWidth;
-                if (isScrollable) {
-                    wrapper.classList.add('is-scrollable');
-                } else {
-                    wrapper.classList.remove('is-scrollable');
-                }
-            });
-        }
         
         function handleContentAction(event) {
             const target = event.target;
@@ -1368,7 +1374,7 @@
             recalculateAndRender();
 
             window.addEventListener('resize', () => {
-                checkTableOverflow();
+                // checkTableOverflow(); // Dihapus untuk memperbaiki error
                 updateHeadersForMobileView();
             });
 
