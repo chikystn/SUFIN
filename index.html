@@ -1015,6 +1015,8 @@
             document.getElementById('pengeluaran-note').innerHTML = `Realisasi: <strong>${formatCurrency(dashboard.realisasi)}</strong>`;
             document.getElementById('sisa-kas').textContent = formatCurrency(dashboard.sisaKas);
             document.getElementById('sisa-kas-note').innerHTML = `Surplus dari dana operasional.`;
+            document.getElementById('rasio-tabungan').textContent = `${dashboard.rasioTabungan.toFixed(1)}%`;
+            document.getElementById('rasio-tabungan-note').textContent = "Dari total pemasukan cair.";
             document.getElementById('total-aset').textContent = formatCurrency(dashboard.totalAset);
             document.getElementById('total-aset-note').textContent = "Akumulasi tabungan & investasi Anda.";
 
