@@ -615,6 +615,11 @@
                 <div class="amount surplus" id="sisa-kas"></div>
                 <div class="note" id="sisa-kas-note"></div>
             </div>
+            <div class="card">
+                <h3>Saving Rate</h3>
+                <div class="amount info" id="rasio-tabungan"></div>
+                <div class="note" id="rasio-tabungan-note"></div>
+            </div>
              <div class="card">
                 <h3>Total Aset Kumulatif</h3>
                 <div class="amount info" id="total-aset"></div>
@@ -718,7 +723,7 @@
             modal.style.display = 'flex';
             confirmCallback = callback;
         }
-
+        
         function createEmptyMonthData(monthKey) {
             return {
                 [monthKey]: {
