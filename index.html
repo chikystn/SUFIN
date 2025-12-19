@@ -1177,24 +1177,30 @@
                     ctx = chart.ctx;
 
                 ctx.restore();
-                // Font size relative to height
-                var fontSize = (height / 150).toFixed(2);
-                ctx.font = "bold " + fontSize + "em sans-serif";
-                ctx.textBaseline = "middle";
-                ctx.fillStyle = "#fff"; // Warna teks putih
+                
+                // Font sizes
+                var fontSizeMain = (height / 160).toFixed(2);
+                var fontSizeSub = (height / 300).toFixed(2);
 
-                var text = chart.config.options.elements.center.text,
-                    textX = Math.round((width - ctx.measureText(text).width) / 2),
-                    textY = height / 2;
+                // Main Text (Percentage)
+                ctx.font = "bold " + fontSizeMain + "em sans-serif";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = "#fff";
+
+                var text = chart.config.options.elements.center.text;
+                var textX = Math.round((width - ctx.measureText(text).width) / 2);
+                var textY = height / 2 - (height * 0.05); // Move up slightly
 
                 ctx.fillText(text, textX, textY);
                 
-                // Optional: Subtext
+                // Subtext (Label)
                 var subtext = "Pengeluaran";
-                ctx.font = "normal " + (fontSize * 0.5) + "em sans-serif";
+                ctx.font = "normal " + fontSizeSub + "em sans-serif";
                 ctx.fillStyle = "#9ca3af";
                 var subtextX = Math.round((width - ctx.measureText(subtext).width) / 2);
-                ctx.fillText(subtext, subtextX, textY + 20); // Sedikit di bawah
+                var subtextY = height / 2 + (height * 0.08); // Move down slightly
+
+                ctx.fillText(subtext, subtextX, subtextY);
 
                 ctx.save();
             }
