@@ -353,6 +353,11 @@
         .selisih-hemat { color: var(--success-color); font-weight: 600; }
         .selisih-boros { color: var(--danger-color); font-weight: 600; }
 
+        /* Style Khusus Profit/Loss di Portofolio */
+        .text-profit { color: var(--success-color); font-weight: 600; }
+        .text-loss { color: var(--danger-color); font-weight: 600; }
+        .text-neutral { color: var(--secondary-color); }
+
         .sop-section { padding: 0; }
         .sop-item { padding: 20px; border-bottom: 1px solid var(--border-color); }
         .sop-item:last-child { border-bottom: none; }
@@ -532,14 +537,18 @@
         </section>
         <!-- AKHIR SEKSI BARU -->
 
-        <!-- SEKSI PORTOFOLIO INVESTASI (NEW) -->
+        <!-- SEKSI PORTOFOLIO INVESTASI (UPDATED) -->
         <section class="section" id="investment-section">
             <h2>Portofolio Aset & Investasi</h2>
             <!-- Kartu Total Aset dengan Gradient Emerald -->
             <div class="card" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none; margin-bottom: 20px; color: white;">
                 <h3 style="color: #e6fffa; margin-top: 0;">Total Nilai Aset</h3>
                 <div class="amount" id="total-portfolio-value" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Rp 0</div>
-                <div class="note" style="color: #d1fae5;">Snapshot kekayaan (Net Worth) di bulan ini</div>
+                <!-- Badge Total Keuntungan -->
+                <div id="total-portfolio-profit" style="margin-top: 10px; font-weight: bold; font-size: 1rem; color: #d1fae5;">
+                    Total Profit: Rp 0
+                </div>
+                <div class="note" style="color: #a7f3d0; font-size: 0.85rem; margin-top: 5px;">Snapshot kekayaan (Net Worth) saat ini</div>
             </div>
 
             <!-- Tabel Rincian -->
@@ -550,7 +559,9 @@
                         <tr>
                             <th>Nama Aset / Investasi</th>
                             <th>Kategori</th>
+                            <th>Modal Awal (Rp)</th> <!-- Kolom Baru -->
                             <th>Nilai Saat Ini (Rp)</th>
+                            <th>Keuntungan (Profit/Loss)</th> <!-- Kolom Baru -->
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -672,8 +683,8 @@
                     pengeluaran: [],
                     penarikanAset: 0, // Fitur Penarikan Aset
                     portofolio: [ // Fitur Baru: Portofolio Investasi
-                        { id: 'asset_1', nama: 'Tabungan Emas', kategori: 'Logam Mulia', nominal: 0 },
-                        { id: 'asset_2', nama: 'Reksadana Psr Uang', kategori: 'Reksadana', nominal: 0 }
+                        { id: 'asset_1', nama: 'Tabungan Emas', kategori: 'Logam Mulia', modalAwal: 0, nominal: 0 },
+                        { id: 'asset_2', nama: 'Reksadana Psr Uang', kategori: 'Reksadana', modalAwal: 0, nominal: 0 }
                     ],
                     alokasi: [
                         { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini.', strategi: 'Disimpan di rekening terpisah.' },
@@ -702,7 +713,7 @@
         }
 
         function parseCurrency(formattedString) {
-            const cleanString = String(formattedString).replace(/[^0-9]/g, '');
+            const cleanString = String(formattedString).replace(/[^0-9-]/g, ''); // Allow minus sign
             return Number(cleanString);
         }
         
@@ -761,7 +772,7 @@
 
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
-            const { dashboard, pemasukan, pengeluaran, portofolio } = data; // Added portofolio
+            const { dashboard, pemasukan, pengeluaran, portofolio } = data;
 
             const [year, month] = monthKey.split('-');
             const date = new Date(year, month - 1);
@@ -796,21 +807,42 @@
             });
             currentY = doc.autoTable.previous.finalY + 15;
 
-            // --- Tabel Portofolio Investasi (New in PDF) ---
+            // --- Tabel Portofolio Investasi (New in PDF with Profit) ---
             if (portofolio && portofolio.length > 0) {
                 doc.setFontSize(12);
                 doc.text('Portofolio Aset & Investasi', 14, currentY);
                 currentY += 7;
-                const totalInvestasi = portofolio.reduce((sum, item) => sum + (item.nominal || 0), 0);
+                
+                const tableBody = [];
+                let totalInvestasi = 0;
+                let totalProfit = 0;
+
+                portofolio.forEach(p => {
+                    const modal = p.modalAwal || 0;
+                    const nilai = p.nominal || 0;
+                    const profit = nilai - modal;
+                    const roi = modal > 0 ? (profit / modal) * 100 : 0;
+                    
+                    totalInvestasi += nilai;
+                    totalProfit += profit;
+
+                    tableBody.push([
+                        p.nama, 
+                        p.kategori, 
+                        formatCurrency(modal), 
+                        formatCurrency(nilai), 
+                        `${formatCurrency(profit)} (${roi.toFixed(1)}%)`
+                    ]);
+                });
+
+                tableBody.push(['TOTAL', '', '', formatCurrency(totalInvestasi), formatCurrency(totalProfit)]);
+
                 doc.autoTable({
                     startY: currentY,
-                    head: [['Nama Aset', 'Kategori', 'Nilai Saat Ini']],
-                    body: [
-                        ...portofolio.map(p => [p.nama, p.kategori, formatCurrency(p.nominal)]),
-                        ['TOTAL NILAI ASET', '', formatCurrency(totalInvestasi)] // Footer Total
-                    ],
+                    head: [['Nama Aset', 'Kategori', 'Modal Awal', 'Nilai Saat Ini', 'Keuntungan (Cuan)']],
+                    body: tableBody,
                     theme: 'striped',
-                    headStyles: { fillColor: [5, 150, 105] }, // Emerald Green for Investment
+                    headStyles: { fillColor: [5, 150, 105] },
                     footStyles: { fillColor: [5, 150, 105], fontStyle: 'bold' }
                 });
                 currentY = doc.autoTable.previous.finalY + 15;
@@ -1116,30 +1148,65 @@
             `;
         }
 
-        // --- FUNGSI RENDER PORTOFOLIO (NEW) ---
+        // --- FUNGSI RENDER PORTOFOLIO (UPDATED WITH PROFIT) ---
         function renderPortfolioSection(data) {
             const tableBody = document.getElementById('portfolio-table-body');
             const totalValueDisplay = document.getElementById('total-portfolio-value');
+            const totalProfitDisplay = document.getElementById('total-portfolio-profit');
+            
             const portfolioData = data.portofolio || [];
 
             tableBody.innerHTML = '';
             
             let totalValue = 0;
+            let totalProfit = 0;
 
             portfolioData.forEach((item, index) => {
-                totalValue += (item.nominal || 0);
+                const modal = item.modalAwal || 0;
+                const nominal = item.nominal || 0;
+                const profit = nominal - modal;
+                let profitClass = 'text-neutral';
+                let profitSign = '';
+                
+                if (profit > 0) {
+                    profitClass = 'text-profit';
+                    profitSign = '+';
+                } else if (profit < 0) {
+                    profitClass = 'text-loss';
+                }
+
+                // Hitung ROI
+                const roi = modal > 0 ? (profit / modal) * 100 : 0;
+                
+                totalValue += nominal;
+                totalProfit += profit;
                 
                 const row = `
                     <tr>
                         <td contenteditable="true" data-type="portofolio" data-index="${index}" data-field="nama">${item.nama}</td>
                         <td contenteditable="true" data-type="portofolio" data-index="${index}" data-field="kategori">${item.kategori}</td>
-                        <td><input type="text" class="editable-amount" value="${formatCurrency(item.nominal)}" data-type="portofolio" data-index="${index}" data-field="nominal"></td>
+                        <td><input type="text" class="editable-amount" value="${formatCurrency(modal)}" data-type="portofolio" data-index="${index}" data-field="modalAwal"></td>
+                        <td><input type="text" class="editable-amount" value="${formatCurrency(nominal)}" data-type="portofolio" data-index="${index}" data-field="nominal"></td>
+                        <td class="${profitClass}">${profitSign}${formatCurrency(profit)} (${roi.toFixed(1)}%)</td>
                         <td><button class="delete-btn" data-type="portofolio" data-index="${index}">&#128465;</button></td>
                     </tr>`;
                 tableBody.innerHTML += row;
             });
 
             totalValueDisplay.textContent = formatCurrency(totalValue);
+            
+            let totalProfitClass = 'text-neutral';
+            let totalProfitSign = '';
+            if (totalProfit > 0) { totalProfitClass = 'text-profit'; totalProfitSign = '+'; }
+            else if (totalProfit < 0) { totalProfitClass = 'text-loss'; }
+            
+            // Perbaikan warna text profit agar kontras di background hijau gelap
+            let profitColorStyle = "";
+            if (totalProfit > 0) profitColorStyle = "color: #6ee7b7;"; // Hijau terang
+            else if (totalProfit < 0) profitColorStyle = "color: #fca5a5;"; // Merah terang
+            else profitColorStyle = "color: #d1fae5;"; // Netral terang
+
+            totalProfitDisplay.innerHTML = `Total Profit: <span style="${profitColorStyle}">${totalProfitSign}${formatCurrency(totalProfit)}</span>`;
         }
 
         // --- WRAPPED / TREND ANALYSIS LOGIC (UPDATED) ---
@@ -1583,6 +1650,7 @@
                     id: 'asset_' + Date.now(),
                     nama: 'Aset Baru',
                     kategori: 'Umum',
+                    modalAwal: 0, // Inisialisasi modal awal
                     nominal: 0
                 });
                 saveDataToLocalStorage();
