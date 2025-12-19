@@ -82,10 +82,16 @@
         
         /* TREND SECTION STYLES */
         .trend-chart-container { position: relative; width: 100%; height: 350px; max-width: 500px; margin: 0 auto; }
-        .trend-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+        .trend-filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
         .trend-filter-btn { background-color: transparent; border: 1px solid var(--secondary-color); color: var(--secondary-color); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
         .trend-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
         .trend-filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        
+        /* FITUR BARU: Kontrol Manual Trend */
+        .trend-custom-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        .trend-custom-controls select { background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; }
+        .trend-custom-controls label { font-size: 0.9rem; color: var(--secondary-color); }
+        #trend-period-label { text-align: center; color: var(--info-color); font-size: 0.9rem; font-weight: 600; margin-bottom: 20px; margin-top: 5px;}
 
         /* TREND SUMMARY TEXT STYLES */
         .trend-summary {
@@ -202,6 +208,8 @@
             .section h2 { font-size: 1.3rem; }
             .card .amount { font-size: 1.4rem; }
             .editable-amount { min-width: 90px; }
+            /* Stack custom controls on mobile */
+            .trend-custom-controls { flex-direction: column; align-items: stretch; }
         }
 
         @media print {
@@ -254,7 +262,7 @@
                 <h3>Total Aset Kumulatif</h3>
                 <div class="amount info" id="total-aset"></div>
                 <div class="note" id="total-aset-note"></div>
-                <!-- FITUR BARU: Input Penarikan Aset -->
+                <!-- FITUR: Input Penarikan Aset -->
                 <div class="withdrawal-section">
                     <label for="penarikan-aset-input">Penarikan Darurat / Terpakai (-):</label>
                     <input type="text" id="penarikan-aset-input" class="withdrawal-input" placeholder="Rp 0" data-type="penarikanAset">
@@ -262,16 +270,28 @@
             </div>
         </section>
 
-        <!-- FITUR BARU: Analisis Tren dengan Ringkasan Teks & Pie Chart -->
+        <!-- FITUR BARU: Analisis Tren dengan Ringkasan Teks & Pie Chart & Custom Range -->
         <section class="section">
             <h2>Analisis Tren Arus Kas (Financial Insight)</h2>
             <div class="trend-filters">
-                <button class="trend-filter-btn" data-range="3" onclick="updateTrendChart(3)">3 Bulan</button>
-                <button class="trend-filter-btn" data-range="6" onclick="updateTrendChart(6)">6 Bulan</button>
-                <button class="trend-filter-btn active" data-range="12" onclick="updateTrendChart(12)">Tahun Ini</button>
-                <button class="trend-filter-btn" data-range="all" onclick="updateTrendChart('all')">Semua</button>
+                <button class="trend-filter-btn" onclick="updateTrendChart(3)">3 Bulan</button>
+                <button class="trend-filter-btn" onclick="updateTrendChart(6)">6 Bulan</button>
+                <button class="trend-filter-btn active" onclick="updateTrendChart(12)">Tahun Ini</button>
+                <button class="trend-filter-btn" onclick="updateTrendChart('all')">Semua</button>
             </div>
             
+            <!-- FITUR BARU: Kontrol Rentang Manual -->
+            <div class="trend-custom-controls">
+                <label>Dari:</label>
+                <select id="trend-start-month"></select>
+                <label>Sampai:</label>
+                <select id="trend-end-month"></select>
+                <button id="apply-custom-trend" class="trend-filter-btn" style="border: 1px solid var(--info-color); color: var(--info-color);">Tampilkan</button>
+            </div>
+
+            <!-- Keterangan Periode -->
+            <p id="trend-period-label"></p>
+
             <!-- Ringkasan Teks -->
             <div id="trend-summary" class="trend-summary">
                 <!-- Content will be injected by JS -->
@@ -469,21 +489,70 @@
             });
         }
         
-        // --- FUNGSI BARU: Logika Trend Chart (Pie Saja + Ringkasan) ---
-        function getTrendData(range) {
-            let monthsToInclude = [];
+        // --- FUNGSI BARU: Logika Trend Chart (Pie + Ringkasan + Custom Range + Label) ---
+        function populateTrendMonthSelectors() {
+            const startSelect = document.getElementById('trend-start-month');
+            const endSelect = document.getElementById('trend-end-month');
             
-            if (range === 12) {
-                const currentKey = availableMonths[currentMonthIndex];
-                const currentYear = currentKey.split('-')[0];
-                monthsToInclude = availableMonths.filter(m => m.startsWith(currentYear));
-            } else if (range === 'all') {
-                monthsToInclude = availableMonths;
+            // Clear existing options
+            startSelect.innerHTML = '';
+            endSelect.innerHTML = '';
+
+            availableMonths.forEach((monthKey, index) => {
+                const [y, m] = monthKey.split('-');
+                const dateObj = new Date(y, m - 1);
+                const label = dateObj.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
+                
+                const optionStart = document.createElement('option');
+                optionStart.value = index;
+                optionStart.text = label;
+                startSelect.appendChild(optionStart);
+
+                const optionEnd = document.createElement('option');
+                optionEnd.value = index;
+                optionEnd.text = label;
+                endSelect.appendChild(optionEnd);
+            });
+        }
+
+        function getTrendData(rangeOrStart, end = null) {
+            let startIndex, endIndex;
+
+            if (typeof rangeOrStart === 'number') {
+                // Preset logic
+                if (rangeOrStart === 12) {
+                    // YTD Logic
+                    const currentKey = availableMonths[currentMonthIndex];
+                    const currentYear = currentKey.split('-')[0];
+                    const firstMonthOfYearIndex = availableMonths.findIndex(m => m.startsWith(currentYear));
+                    startIndex = firstMonthOfYearIndex !== -1 ? firstMonthOfYearIndex : 0;
+                    endIndex = currentMonthIndex;
+                } else {
+                    // Backward N months logic
+                    startIndex = Math.max(0, currentMonthIndex - rangeOrStart + 1);
+                    endIndex = currentMonthIndex;
+                }
+            } else if (rangeOrStart === 'all') {
+                startIndex = 0;
+                endIndex = availableMonths.length - 1;
             } else {
-                const startIndex = Math.max(0, currentMonthIndex - range + 1);
-                monthsToInclude = availableMonths.slice(startIndex, currentMonthIndex + 1);
+                // Custom Indices passed directly from buttons
+                startIndex = parseInt(rangeOrStart);
+                endIndex = parseInt(end);
             }
 
+            // Ensure valid range just in case
+            if (isNaN(startIndex) || isNaN(endIndex)) {
+                startIndex = 0;
+                endIndex = 0;
+            }
+            if (startIndex > endIndex) {
+                const temp = startIndex;
+                startIndex = endIndex;
+                endIndex = temp;
+            }
+
+            const monthsToInclude = availableMonths.slice(startIndex, endIndex + 1);
             let totalIncome = 0;
             let totalExpense = 0;
 
@@ -499,17 +568,59 @@
                 totalExpense += expense;
             });
 
-            return { totalIncome, totalExpense };
+            // Calculate Period Labels
+            const startKey = availableMonths[startIndex];
+            const endKey = availableMonths[endIndex];
+            const [y1, m1] = startKey.split('-');
+            const [y2, m2] = endKey.split('-');
+            // Helper for month name
+            const getMonthName = (y, m) => new Date(y, m-1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+            
+            const startLabel = getMonthName(y1, m1);
+            const endLabel = getMonthName(y2, m2);
+
+            return { totalIncome, totalExpense, startLabel, endLabel, startIndex, endIndex };
         }
 
-        function updateTrendChart(range = 12) {
-            document.querySelectorAll('.trend-filter-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.getAttribute('data-range') == range) btn.classList.add('active');
-            });
+        function updateTrendChart(rangeOrStart, end = null) {
+            // Update Active Button UI if it's a preset
+            if (typeof rangeOrStart === 'number' || rangeOrStart === 'all') {
+                 document.querySelectorAll('.trend-filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    // Check logic for presets
+                    const onclickVal = btn.getAttribute('onclick');
+                    if (onclickVal && (onclickVal.includes(`updateTrendChart(${rangeOrStart})`) || (rangeOrStart === 'all' && onclickVal.includes("'all'")))) {
+                         btn.classList.add('active');
+                    }
+                });
+            } else {
+                 // Custom range, remove active from presets
+                 document.querySelectorAll('.trend-filter-btn').forEach(btn => btn.classList.remove('active'));
+            }
 
-            const { totalIncome, totalExpense } = getTrendData(range);
+            const { totalIncome, totalExpense, startLabel, endLabel, startIndex, endIndex } = getTrendData(rangeOrStart, end);
+            
+            // Sync Dropdowns if it's a preset update
+            if (end === null) {
+                 const startSelect = document.getElementById('trend-start-month');
+                 const endSelect = document.getElementById('trend-end-month');
+                 if(startSelect && endSelect){
+                     startSelect.value = startIndex;
+                     endSelect.value = endIndex;
+                 }
+            }
+
             const selisih = totalIncome - totalExpense;
+
+            // UPDATE LABEL PERIODE
+            const periodLabel = document.getElementById('trend-period-label');
+            if (periodLabel) {
+                if (startLabel === endLabel) {
+                    periodLabel.textContent = `Periode: ${startLabel}`;
+                } else {
+                    periodLabel.textContent = `Periode: ${startLabel} - ${endLabel}`;
+                }
+            }
 
             // UPDATE RINGKASAN TEKS
             const summaryContainer = document.getElementById('trend-summary');
@@ -764,6 +875,8 @@
 
             renderUI(monthKey);
             // Update trend chart whenever data changes
+            // Pastikan fungsi ini dipanggil setelah renderUI agar dropdowns tersedia
+            populateTrendMonthSelectors();
             const activeFilterBtn = document.querySelector('.trend-filter-btn.active');
             const range = activeFilterBtn ? activeFilterBtn.dataset.range : 12;
             updateTrendChart(range === 'all' ? 'all' : parseInt(range));
@@ -853,6 +966,7 @@
             const targetDana = strategicData.target;
             const progressPercentage = targetDana > 0 ? Math.min((totalDanaSiaga / targetDana) * 100, 100) : 0;
             
+            // Filter hanya komponen manual yang bisa dihapus atau diedit
             const manualKomponen = komponen.filter(c => c.id && c.id.startsWith('manual_'));
 
             const componentsHTML = komponen.map((item, index) => {
@@ -1035,6 +1149,14 @@
                     saveDataToLocalStorage();
                     recalculateAndRender();
                 }
+                return;
+            }
+
+            // --- FUNGSI CUSTOM TREND BUTTON ---
+            if (target.id === 'apply-custom-trend') {
+                const startIdx = document.getElementById('trend-start-month').value;
+                const endIdx = document.getElementById('trend-end-month').value;
+                updateTrendChart(startIdx, endIdx);
                 return;
             }
 
@@ -1223,10 +1345,12 @@
 
             recalculateAndRender();
             window.addEventListener('resize', () => { updateHeadersForMobileView(); checkTableOverflow(); });
-            // Initial call to set active button state
+            // Initial call to set active button state and dropdowns
+            populateTrendMonthSelectors();
             updateTrendChart(12);
         });
     </script>
 
 </body>
 </html>
+tolong pada tampilan grafik di financial insight dibuat berwarna warni jangan cuman 2 warna, misal pemasukan warna hijau pengeluaran warna merah dan selisihnya kuning biar ada perbedaan yang jelas
