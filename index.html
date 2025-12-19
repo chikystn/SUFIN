@@ -1,1329 +1,2195 @@
 <!DOCTYPE html>
+
 <html lang="id">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>SUFIN|SUTAN-FINANCE</title>
+
     <!-- Library untuk membuat chart/grafik -->
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Library untuk membuat PDF -->
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
     <!-- Impor font dari Google Fonts -->
+
     <style>
+
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
+
+
         :root {
+
             --bg-color: #111827;
+
             --card-bg: #1f2937;
+
             --text-color: #f3f4f6;
+
             --primary-color: #3b82f6;
+
             --secondary-color: #9ca3af;
+
             --success-color: #10b981;
+
             --danger-color: #ef4444;
+
             --warning-color: #f59e0b;
+
             --info-color: #38bdf8;
+
             --border-color: #374151;
+
             --shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+
         }
 
+
+
         body {
+
             font-family: 'Inter', sans-serif;
+
             background-color: var(--bg-color);
+
             color: var(--text-color);
+
             margin: 0;
+
             padding: 20px;
+
             line-height: 1.6;
+
         }
+
+
 
         .container { max-width: 1000px; margin: 0 auto; padding: 0 15px; }
 
+
+
         header { display: flex; justify-content: center; text-align: center; margin-bottom: 20px; }
+
         header h1 { font-size: clamp(1.8rem, 8vw, 2.5rem); font-weight: 700; color: var(--text-color); margin-bottom: 0; }
 
+
+
         .month-navigation { display: flex; justify-content: center; align-items: center; margin-bottom: 40px; gap: 15px; flex-wrap: wrap; }
+
         .month-navigation button { background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.2s ease; }
+
         .month-navigation button:hover { background-color: #2563eb; }
+
         .month-navigation button:disabled { background-color: #4b5563; cursor: not-allowed; }
+
         #add-month-btn { padding: 10px 15px; font-size: 1.2rem; line-height: 1; }
+
+
 
         #current-month-display { font-size: clamp(1.2rem, 5vw, 1.5rem); font-weight: 700; color: var(--text-color); width: 220px; text-align: center; flex-shrink: 0; }
 
-        /* Grid Dashboard Tetap */
+
+
+        /* PERBAIKAN: Menggunakan Grid Kolom Tetap untuk Proporsionalitas */
+
         .dashboard { 
+
             display: grid; 
-            grid-template-columns: 1fr; 
+
+            grid-template-columns: 1fr; /* Default Mobile: 1 Kolom */
+
             gap: 20px; 
+
             margin-bottom: 40px; 
+
         }
-        @media (min-width: 640px) { .dashboard { grid-template-columns: repeat(2, 1fr); } }
-        @media (min-width: 1024px) { .dashboard { grid-template-columns: repeat(3, 1fr); } }
+
+
+
+        /* Tablet: 2 Kolom */
+
+        @media (min-width: 640px) {
+
+            .dashboard {
+
+                grid-template-columns: repeat(2, 1fr);
+
+            }
+
+        }
+
+
+
+        /* Desktop: 3 Kolom (Agar baris bawah ukurannya sama dengan atas) */
+
+        @media (min-width: 1024px) {
+
+            .dashboard {
+
+                grid-template-columns: repeat(3, 1fr);
+
+            }
+
+        }
+
         
+
         .card { background-color: var(--card-bg); border-radius: 12px; padding: 25px; box-shadow: var(--shadow); border: 1px solid var(--border-color); display: flex; flex-direction: column; }
+
         .card h3 { margin-top: 0; font-size: 1rem; color: var(--secondary-color); font-weight: 600; }
+
         .card .amount { font-size: clamp(1.2rem, 5vw, 1.8rem); font-weight: 700; margin-bottom: 5px; word-wrap: break-word; }
+
         .card .amount.income { color: var(--success-color); }
+
         .card .amount.expense { color: var(--danger-color); }
+
         .card .amount.surplus { color: var(--primary-color); }
+
         .card .amount.info { color: var(--info-color); }
+
         .card .note { font-size: 0.9rem; color: var(--secondary-color); margin-top: auto; }
+
         .card .note strong { color: var(--text-color); }
 
-        /* CSS FITUR BARU: Input Penarikan */
-        .withdrawal-section { margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); }
-        .withdrawal-section label { display: block; font-size: 0.85rem; color: var(--danger-color); margin-bottom: 5px; font-weight: 600; }
-        .withdrawal-input { width: 100%; background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger-color); color: var(--danger-color); padding: 8px; border-radius: 6px; font-weight: bold; box-sizing: border-box; }
+
+
+        /* Style khusus untuk Input Penarikan di Dashboard */
+
+        .withdrawal-section {
+
+            margin-top: 15px;
+
+            padding-top: 15px;
+
+            border-top: 1px dashed var(--border-color);
+
+        }
+
+        .withdrawal-section label {
+
+            display: block;
+
+            font-size: 0.85rem;
+
+            color: var(--danger-color);
+
+            margin-bottom: 5px;
+
+            font-weight: 600;
+
+        }
+
+        .withdrawal-input {
+
+            width: 100%;
+
+            background-color: rgba(239, 68, 68, 0.1);
+
+            border: 1px solid var(--danger-color);
+
+            color: var(--danger-color);
+
+            padding: 8px;
+
+            border-radius: 6px;
+
+            font-weight: bold;
+
+            box-sizing: border-box;
+
+        }
+
         .withdrawal-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); }
 
+
+
         .section { background-color: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border-color); margin-bottom: 30px; }
+
         .section h2 { font-size: clamp(1.5rem, 6vw, 1.8rem); margin-top: 0; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); margin-bottom: 20px; }
+
+
 
         .chart-container { position: relative; max-width: 450px; margin: 20px auto; }
 
-        /* CSS FITUR BARU: Analisis Tren */
-        .trend-chart-container { position: relative; width: 100%; height: 350px; max-width: 500px; margin: 0 auto; }
-        .trend-filters { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; justify-content: center; }
-        .trend-filter-btn { background-color: transparent; border: 1px solid var(--secondary-color); color: var(--secondary-color); padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
-        .trend-filter-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
-        .trend-filter-btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
-        
-        .trend-custom-controls { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        .trend-custom-controls select { background-color: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 5px 10px; font-family: inherit; font-size: 0.9rem; cursor: pointer; }
-        .trend-custom-controls label { font-size: 0.9rem; color: var(--secondary-color); }
-        #trend-period-label { text-align: center; color: var(--info-color); font-size: 0.9rem; font-weight: 600; margin-bottom: 20px; margin-top: 5px;}
 
-        .trend-summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr); /* Mobile default */
-            gap: 15px;
-            margin-bottom: 20px;
-            text-align: center;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 20px;
-        }
-        @media (min-width: 640px) { .trend-summary { grid-template-columns: repeat(4, 1fr); } }
-
-        .trend-summary-item h4 {
-            margin: 0 0 5px 0; font-size: 0.8rem; color: var(--secondary-color); font-weight: 500;
-        }
-        .trend-summary-item .value { font-size: 1rem; font-weight: 700; }
-        .trend-summary-item .value.income { color: var(--success-color); }
-        .trend-summary-item .value.expense { color: var(--danger-color); }
-        .trend-summary-item .value.withdrawal { color: var(--warning-color); }
-        .trend-summary-item .value.diff { color: var(--info-color); }
 
         .allocation-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+
         .allocation-card { background-color: #374151; border-radius: 10px; padding: 20px; border: 1px solid var(--border-color); }
+
         .allocation-card h3 { font-size: 1.2rem; margin-top: 0; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+
         .allocation-card .amount { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); margin-bottom: 5px; }
+
         .allocation-card .target-info, .strategic-fund-card .target-info { font-size: 0.9rem; color: var(--secondary-color); margin-bottom: 10px; height: 1.2em; }
-        .allocation-card .target-info strong, .strategic-fund-card .target-info strong { color: var(--text-color); font-weight: 700; }
+
         .allocation-card .note-persen { font-size: 0.8rem; font-style: italic; color: var(--secondary-color); }
+
         .progress-bar-container { background-color: #4b5563; border-radius: 50px; height: 12px; width: 100%; margin-bottom: 15px; overflow: hidden; }
+
         .progress-bar { background-color: var(--primary-color); height: 100%; border-radius: 50px; transition: width 0.5s ease-in-out; }
+
         .allocation-card p { font-size: 0.9rem; color: var(--secondary-color); margin: 5px 0 0 0; }
-        .allocation-card p strong { color: var(--text-color); }
+
+
 
         .strategic-fund-card { background-color: rgba(59, 130, 246, 0.1); border: 2px solid var(--primary-color); border-radius: 12px; padding: 25px; }
+
         .strategic-fund-card h3 { font-size: 1.5rem; color: var(--primary-color); margin-top: 0; }
+
         .strategic-fund-card .total-fund { font-size: 2.2rem; font-weight: 700; margin-bottom: 15px; }
+
         .strategic-fund-card .component-list { list-style: none; padding: 0; margin: 0; }
+
         .strategic-fund-card .component-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(59, 130, 246, 0.3); gap: 15px; }
+
         .strategic-fund-card .component-item:last-child { border-bottom: none; }
+
         .strategic-fund-card .component-name { font-weight: 600; white-space: normal; }
+
         .strategic-fund-card .component-status { font-size: 0.8rem; color: var(--secondary-color); display: block; white-space: normal; }
+
         .strategic-fund-card .component-amount { font-weight: 700; font-size: 1.1rem; white-space: nowrap; }
+
         .strategic-fund-card .component-amount.editable-amount { width: 120px; text-align: right; font-size: 1.1rem; padding: 6px; }
+
         .strategic-fund-card .summary { background-color: rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 15px; text-align: center; font-weight: 600; margin-top: 20px; }
+
        
+
         .table-wrapper { overflow-x: auto; position: relative; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; word-wrap: break-word; hyphens: auto; vertical-align: middle; }
+
         
+
         [contenteditable="true"] { cursor: text; background-color: #374151; white-space: normal; border-bottom: 1px dotted var(--secondary-color); padding: 0 2px; }
+
         [contenteditable="true"]:focus { background-color: #4b5563; outline: 2px solid var(--primary-color); border-radius: 4px; border-bottom-color: transparent; }
+
         
+
         th { background-color: #374151; font-weight: 600; }
+
         tbody tr:last-child td { border-bottom: none; }
+
         tfoot td { font-weight: 700; font-size: 1.1rem; background-color: #374151; }
 
+
+
         .editable-amount { border: 1px solid transparent; background-color: #374151; font-family: inherit; font-size: inherit; color: inherit; min-width: 100px; padding: 4px; border-radius: 4px; box-sizing: border-box; }
+
         .editable-amount:focus { outline: none; border-color: var(--primary-color); background-color: #4b5563; }
 
+
+
         .delete-btn { background: none; border: none; color: var(--danger-color); cursor: pointer; font-size: 1.2rem; }
+
         .delete-btn:hover { background-color: rgba(239, 68, 68, 0.1); border-radius: 50%; }
 
+
+
         .add-row-btn { background-color: var(--success-color); color: white; border: none; padding: 8px 15px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: 15px; }
+
         .add-row-btn:hover { background-color: #059669; }
 
+
+
         .status-select { background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 8px; font-family: inherit; font-size: 0.9rem; cursor: pointer; padding-right: 2.5rem; }
+
         .strategic-checkbox { width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary-color); vertical-align: middle; }
+
         .selisih-hemat { color: var(--success-color); font-weight: 600; }
+
         .selisih-boros { color: var(--danger-color); font-weight: 600; }
 
+
+
         .sop-section { padding: 0; }
+
         .sop-item { padding: 20px; border-bottom: 1px solid var(--border-color); }
+
         .sop-item:last-child { border-bottom: none; }
+
         .sop-item h4 { margin: 0 0 10px 0; font-size: 1.1rem; color: var(--primary-color); }
+
         .sop-item ul { padding-left: 20px; margin: 0; color: var(--secondary-color); }
+
         .sop-item li { margin-bottom: 5px; }
+
+
 
         .mobile-scroll-hint { display: none; font-size: 0.8rem; color: var(--secondary-color); text-align: right; margin-bottom: -10px; padding-right: 10px; }
 
+
+
         footer { text-align: center; margin-top: 40px; padding: 20px; color: var(--secondary-color); font-size: 0.9rem; }
+
         #reset-data-btn { margin-top: 15px; background-color: var(--danger-color); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; cursor: pointer; transition: background-color 0.2s ease; }
+
         #reset-data-btn:hover { background-color: #c82333; }
+
         
+
         /* Modal Styles */
+
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); display: none; justify-content: center; align-items: center; z-index: 1000; }
+
         .modal-box { background-color: var(--card-bg); padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 400px; text-align: center; }
+
         .modal-box p { margin: 0 0 20px 0; font-size: 1.1rem; }
+
         .modal-actions { display: flex; justify-content: center; gap: 15px; }
+
         .modal-actions button { padding: 10px 25px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
         #modal-confirm-btn { background-color: var(--danger-color); color: white; }
+
         #modal-cancel-btn { background-color: #4b5563; color: white; }
 
+
+
         @media (max-width: 768px) {
+
             body { padding: 10px; }
+
             .container { padding: 0 10px; }
+
             .month-navigation { gap: 10px; }
+
             #current-month-display { width: 150px; }
+
             .card, .section, .strategic-fund-card { padding: 20px; }
+
             .mobile-scroll-hint { display: block; }
+
             th, td { padding: 10px 8px; font-size: 0.85rem; }
+
         }
+
+
 
         @media (max-width: 480px) {
+
             body { padding: 5px; }
+
             .container { padding: 0 5px; }
+
             .dashboard { gap: 15px; }
+
             #current-month-display { width: 100%; order: -1; margin-bottom: 10px; }
+
             .card, .section, .strategic-fund-card { padding: 15px; }
+
             .section h2 { font-size: 1.3rem; }
+
             .card .amount { font-size: 1.4rem; }
+
             .editable-amount { min-width: 90px; }
-            .trend-custom-controls { flex-direction: column; align-items: stretch; }
+
         }
+
+
 
         @media print {
+
             body > *:not(.strategic-fund-section) { display: none; }
+
             .strategic-fund-section { display: block !important; border: none !important; margin: 0 !important; padding: 0 !important; }
+
             .strategic-fund-card { background-color: white !important; color: black !important; border: 1px solid #ddd !important; }
+
             .strategic-fund-card * { color: black !important; background-color: transparent !important; }
+
             .progress-bar-container { background-color: #eee !important; }
+
             .progress-bar { background-color: var(--primary-color) !important; -webkit-print-color-adjust: exact; color-adjust: exact; }
+
             #print-card-btn, #add-strategic-component-btn, #download-pdf-btn, #reset-data-btn { display: none !important; }
+
         }
+
     </style>
+
 </head>
+
 <body>
 
+
+
     <div class="container">
+
         <header>
+
             <h1>Manajemen Keuangan</h1>
+
         </header>
+
         
+
         <nav class="month-navigation">
+
             <button id="prev-month-btn">‹ Sebelumnya</button>
+
             <h2 id="current-month-display"></h2>
+
             <button id="next-month-btn">Selanjutnya ›</button>
+
             <button id="add-month-btn">+</button>
+
         </nav>
 
+
+
         <section class="dashboard">
+
             <div class="card">
+
                 <h3>Total Pemasukan Liquid</h3>
+
                 <div class="amount income" id="total-pemasukan"></div>
+
                 <div class="note" id="pemasukan-note"></div>
+
             </div>
+
             <div class="card">
+
                 <h3>Anggaran Pengeluaran</h3>
+
                 <div class="amount expense" id="total-pengeluaran"></div>
+
                 <div class="note" id="pengeluaran-note"></div>
+
             </div>
+
             <div class="card">
+
                 <h3>Sisa Kas (Surplus)</h3>
+
                 <div class="amount surplus" id="sisa-kas"></div>
+
                 <div class="note" id="sisa-kas-note"></div>
+
             </div>
+
             <div class="card">
+
                 <h3>Saving Rate</h3>
+
                 <div class="amount info" id="rasio-tabungan"></div>
+
                 <div class="note" id="rasio-tabungan-note"></div>
+
             </div>
+
              <div class="card">
+
                 <h3>Total Aset Kumulatif</h3>
+
                 <div class="amount info" id="total-aset"></div>
+
                 <div class="note" id="total-aset-note"></div>
+
                 <!-- FITUR BARU: Input Penarikan Aset -->
+
                 <div class="withdrawal-section">
+
                     <label for="penarikan-aset-input">Penarikan Darurat / Terpakai (-):</label>
+
                     <input type="text" id="penarikan-aset-input" class="withdrawal-input" placeholder="Rp 0" data-type="penarikanAset">
+
                 </div>
+
             </div>
+
         </section>
 
-        <!-- FITUR BARU: Analisis Tren -->
-        <section class="section">
-            <h2>Analisis Tren Arus Kas (Financial Insight)</h2>
-            <div class="trend-filters">
-                <button class="trend-filter-btn" onclick="updateTrendChart(3)">3 Bulan</button>
-                <button class="trend-filter-btn" onclick="updateTrendChart(6)">6 Bulan</button>
-                <button class="trend-filter-btn active" onclick="updateTrendChart(12)">Tahun Ini</button>
-                <button class="trend-filter-btn" onclick="updateTrendChart('all')">Semua</button>
-            </div>
-            
-            <div class="trend-custom-controls">
-                <label>Dari:</label>
-                <select id="trend-start-month"></select>
-                <label>Sampai:</label>
-                <select id="trend-end-month"></select>
-                <button id="apply-custom-trend" class="trend-filter-btn" style="border: 1px solid var(--info-color); color: var(--info-color);">Tampilkan</button>
-            </div>
 
-            <p id="trend-period-label"></p>
-
-            <!-- Ringkasan Teks -->
-            <div id="trend-summary" class="trend-summary"></div>
-
-            <div class="trend-chart-container">
-                <canvas id="trendChart"></canvas>
-            </div>
-        </section>
 
         <!-- SEKSI UNTUK DANA STRATEGIS -->
+
         <section class="section strategic-fund-section" id="strategic-fund-section" style="display: none;">
+
              <h2>Detail Dana Strategis</h2>
+
              <div id="strategic-fund-container"></div>
+
         </section>
 
+
+
         <section class="section">
+
             <h2>Alokasi Sisa Kas Bulanan</h2>
+
             <div class="chart-container">
+
                 <canvas id="allocationChart"></canvas>
+
             </div>
+
             <div id="allocation-details-container" class="allocation-details"></div>
+
         </section>
 
+
+
         <section class="section">
+
             <h2>Rincian Pemasukan & Dana Tersedia</h2>
+
             <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
+
             <div class="table-wrapper">
+
                 <table data-table-name="pemasukan">
+
                     <thead id="income-table-head">
+
                         <tr>
+
                             <th>Sumber Pemasukan</th><th>Jumlah</th><th>Status</th><th>Strategis?</th><th>Aksi</th>
+
                         </tr>
+
                     </thead>
+
                     <tbody id="income-table-body"></tbody>
+
                     <tfoot id="income-table-foot"></tfoot>
+
                 </table>
+
             </div>
+
             <button class="add-row-btn" id="add-income-btn">+ Tambah Pemasukan</button>
+
         </section>
 
+
+
         <section class="section">
+
             <h2>Rincian & Analisis Pengeluaran</h2>
+
             <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
+
              <div class="chart-container">
+
                 <canvas id="expenseChart"></canvas>
+
             </div>
+
             <div class="table-wrapper">
+
                 <table data-table-name="pengeluaran">
+
                     <thead id="expense-table-head">
+
                         <tr>
+
                             <th>Kategori</th><th>Item</th><th>Anggaran</th><th>Aktual (Terpakai)</th><th>Selisih</th><th>Catatan</th><th>Aksi</th>
+
                         </tr>
+
                     </thead>
+
                     <tbody id="expense-table-body"></tbody>
+
                     <tfoot id="expense-table-foot"></tfoot>
+
                 </table>
+
             </div>
+
             <button class="add-row-btn" id="add-expense-btn">+ Tambah Pengeluaran</button>
+
         </section>
+
+
 
          <section class="section sop-section" id="rencana-aksi-section">
+
             <h2>Rencana Aksi & Aturan Main</h2>
+
         </section>
+
         
+
         <footer>
+
             <p>Dengan sistem keuangan ini, keuangan stabil dan siap bertumbuh.</p>
+
             <button id="download-pdf-btn" class="add-row-btn" style="background-color: var(--info-color); margin-right: 10px;">Unduh Laporan PDF</button>
+
             <button id="reset-data-btn">Reset Semua Data</button>
+
         </footer>
+
     </div>
+
     
+
     <!-- Modal Konfirmasi Kustom -->
+
     <div id="custom-confirm-modal" class="modal-overlay">
+
         <div class="modal-box">
+
             <p id="modal-message">Apakah Anda yakin?</p>
+
             <div class="modal-actions">
+
                 <button id="modal-cancel-btn">Batal</button>
+
                 <button id="modal-confirm-btn">Oke</button>
+
             </div>
+
         </div>
+
     </div>
+
+
 
     <script>
+
         // --- PUSAT DATA KEUANGAN ---
+
         let financeData; 
 
+
+
         // --- VARIABEL GLOBAL ---
+
         const STORAGE_KEY = 'petaKeuanganData';
+
         let currentMonthIndex = 0;
+
         let availableMonths;
+
         const { jsPDF } = window.jspdf;
+
         const allocationCtx = document.getElementById('allocationChart').getContext('2d');
+
         const expenseCtx = document.getElementById('expenseChart').getContext('2d');
-        const trendCtx = document.getElementById('trendChart').getContext('2d');
+
         let allocationChart;
+
         let expenseChart;
-        let trendChart;
+
         
+
         // Variabel Global untuk Modal
+
         let confirmCallback = null;
+
         const modal = document.getElementById('custom-confirm-modal');
 
+
+
         // --- FUNGSI-FUNGSI ---
+
         
+
         // Fungsi Helper untuk Modal Konfirmasi
+
         function showCustomConfirm(message, callback) {
+
             document.getElementById('modal-message').textContent = message;
+
             modal.style.display = 'flex';
+
             confirmCallback = callback;
+
         }
+
+
 
         function createEmptyMonthData(monthKey) {
+
             return {
+
                 [monthKey]: {
+
                     pemasukan: [],
+
                     pengeluaran: [],
-                    penarikanAset: 0, 
+
+                    penarikanAset: 0, // Fitur Penarikan Aset
+
                     alokasi: [
+
                         { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini.', strategi: 'Disimpan di rekening terpisah.' },
+
                         { nama: 'Investasi', jumlah: 0, persentase: 23.8, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
+
                         { nama: 'Dana Darurat', jumlah: 0, persentase: 10, target: 0, warna: '#f59e0b', ikon: '🛡️', deskripsi: 'Dana untuk kebutuhan tak terduga.', strategi: 'Simpan di tempat yang mudah diakses.' }
+
                     ],
+
                     danaStrategis: {
+
                         judul: "Dana Siaga Pembayaran Kuliah",
+
                         target: 1500000,
+
                         deskripsi: "Lacak dana gabungan untuk tujuan pembayaran kuliah mendadak.",
+
                         komponen: [
+
                             { id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 }
+
                         ]
+
                     },
+
                     rencanaAksi: [ { judul: '🎯 Rencana Bulan Ini', poin: ['Tentukan target keuanganmu!'] } ]
+
                 }
+
             };
+
         }
+
         
+
         function saveDataToLocalStorage() {
+
             localStorage.setItem(STORAGE_KEY, JSON.stringify(financeData));
+
         }
+
+
 
         function formatCurrency(amount) {
+
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+
         }
+
+
 
         function parseCurrency(formattedString) {
-            const cleanString = String(formattedString).replace(/[^0-9-]/g, ''); // Allow negative
+
+            const cleanString = String(formattedString).replace(/[^0-9]/g, '');
+
             return Number(cleanString);
+
         }
+
         
-        // PERBAIKAN LOGIKA HITUNG ASET
+
         function calculateTotalAssets(currentIndex) {
+
             let cumulativeAssets = 0;
+
             for (let i = 0; i <= currentIndex; i++) {
+
                 const monthKey = availableMonths[i];
+
                 if (financeData[monthKey]) {
+
                     const data = financeData[monthKey];
-                    // 1. Total Pemasukan Liquid (hanya liquid dan non-strategis)
-                    const totalPemasukan = data.pemasukan.reduce((sum, item) => {
+
+                    const pemasukanLikuid = data.pemasukan.reduce((sum, item) => {
+
                          const status = (item.status || '').toLowerCase();
-                         if ((status === 'liquid' || status === 'likuid') && !item.untukDanaStrategis) {
-                             return sum + item.jumlah;
-                         }
-                         return sum;
+
+                         return (status === 'liquid' || status === 'likuid') ? sum + item.jumlah : sum;
+
                     }, 0);
+
+                    const pengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
+
+                    const sisaKasBulanIni = pemasukanLikuid - pengeluaran;
+
                     
-                    // 2. Total Pengeluaran
-                    const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
-                    
-                    // 3. Penarikan Aset (Manual Withdrawal)
+
+                    // Hitung penarikan aset
+
                     const penarikan = data.penarikanAset || 0;
 
-                    // Rumus Aset: (Pemasukan Operasional - Pengeluaran) - Penarikan
-                    // Ini mengakomodasi bulan yang surplus maupun defisit (tanpa batasan > 0)
-                    cumulativeAssets += (totalPemasukan - totalPengeluaran - penarikan);
+
+
+                    // Hanya surplus yang menambah aset, tapi penarikan selalu mengurangi
+
+                    if (sisaKasBulanIni > 0) {
+
+                        cumulativeAssets += sisaKasBulanIni;
+
+                    }
+
+                    cumulativeAssets -= penarikan;
+
                 }
+
             }
+
             return cumulativeAssets;
+
         }
+
+
 
         function updateHeadersForMobileView() {
+
             const isMobile = window.innerWidth <= 768;
+
             const incomeHeaders = document.querySelectorAll('#income-table-head th');
+
             if (incomeHeaders.length) {
+
                 incomeHeaders[0].textContent = isMobile ? 'Sumber' : 'Sumber Pemasukan';
+
             }
+
             const expenseHeaders = document.querySelectorAll('#expense-table-head th');
+
             if (expenseHeaders.length) {
+
                 expenseHeaders[3].textContent = isMobile ? 'Aktual' : 'Aktual (Terpakai)';
+
             }
+
         }
+
+
 
         function checkTableOverflow() {
+
             document.querySelectorAll('.table-wrapper').forEach(wrapper => {
+
                 const isScrollable = wrapper.scrollWidth > wrapper.clientWidth;
+
                 const hint = wrapper.previousElementSibling;
+
                 if (hint && hint.classList.contains('mobile-scroll-hint')) {
+
                     hint.style.display = isScrollable ? 'block' : 'none';
+
                 }
-            });
-        }
 
-        // --- FUNGSI BARU: Logika Trend Chart ---
-        function populateTrendMonthSelectors() {
-            const startSelect = document.getElementById('trend-start-month');
-            const endSelect = document.getElementById('trend-end-month');
-            
-            startSelect.innerHTML = '';
-            endSelect.innerHTML = '';
-
-            availableMonths.forEach((monthKey, index) => {
-                const [y, m] = monthKey.split('-');
-                const dateObj = new Date(y, m - 1);
-                const label = dateObj.toLocaleString('id-ID', { month: 'short', year: 'numeric' });
-                
-                const optionStart = document.createElement('option');
-                optionStart.value = index;
-                optionStart.text = label;
-                startSelect.appendChild(optionStart);
-
-                const optionEnd = document.createElement('option');
-                optionEnd.value = index;
-                optionEnd.text = label;
-                endSelect.appendChild(optionEnd);
-            });
-        }
-
-        function getTrendData(rangeOrStart, end = null) {
-            let startIndex, endIndex;
-
-            if (typeof rangeOrStart === 'number') {
-                if (rangeOrStart === 12) {
-                    const currentKey = availableMonths[currentMonthIndex];
-                    const currentYear = currentKey.split('-')[0];
-                    const firstMonthOfYearIndex = availableMonths.findIndex(m => m.startsWith(currentYear));
-                    startIndex = firstMonthOfYearIndex !== -1 ? firstMonthOfYearIndex : 0;
-                    endIndex = currentMonthIndex;
-                } else {
-                    startIndex = Math.max(0, currentMonthIndex - rangeOrStart + 1);
-                    endIndex = currentMonthIndex;
-                }
-            } else if (rangeOrStart === 'all') {
-                startIndex = 0;
-                endIndex = availableMonths.length - 1;
-            } else {
-                startIndex = parseInt(rangeOrStart);
-                endIndex = parseInt(end);
-            }
-
-            if (isNaN(startIndex) || isNaN(endIndex)) { startIndex = 0; endIndex = 0; }
-            if (startIndex > endIndex) { const temp = startIndex; startIndex = endIndex; endIndex = temp; }
-
-            const monthsToInclude = availableMonths.slice(startIndex, endIndex + 1);
-            let totalIncome = 0;
-            let totalExpense = 0;
-            let totalWithdrawal = 0;
-
-            monthsToInclude.forEach(monthKey => {
-                const data = financeData[monthKey];
-                
-                // Income: Konsisten dengan Dashboard & Aset -> HANYA OPERASIONAL (Non-Strategis)
-                const income = data.pemasukan.reduce((sum, item) => {
-                    const status = (item.status || '').toLowerCase();
-                    if ((status === 'liquid' || status === 'likuid') && !item.untukDanaStrategis) {
-                        return sum + item.jumlah;
-                    }
-                    return sum;
-                }, 0);
-                
-                // Expense
-                const expense = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
-                
-                // Withdrawal from new Dashboard Input
-                const withdrawal = data.penarikanAset || 0;
-                
-                totalIncome += income;
-                totalExpense += expense;
-                totalWithdrawal += withdrawal;
             });
 
-            // Calculate Period Labels
-            const startKey = availableMonths[startIndex];
-            const endKey = availableMonths[endIndex];
-            const [y1, m1] = startKey.split('-');
-            const [y2, m2] = endKey.split('-');
-            const getMonthName = (y, m) => new Date(y, m-1).toLocaleString('id-ID', { month: 'long', year: 'numeric' });
-            
-            const startLabel = getMonthName(y1, m1);
-            const endLabel = getMonthName(y2, m2);
-
-            return { totalIncome, totalExpense, totalWithdrawal, startLabel, endLabel, startIndex, endIndex };
         }
 
-        function updateTrendChart(rangeOrStart, end = null) {
-            if (typeof rangeOrStart === 'number' || rangeOrStart === 'all') {
-                 document.querySelectorAll('.trend-filter-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                    const onclickVal = btn.getAttribute('onclick');
-                    if (onclickVal && (onclickVal.includes(`updateTrendChart(${rangeOrStart})`) || (rangeOrStart === 'all' && onclickVal.includes("'all'")))) {
-                         btn.classList.add('active');
-                    }
-                });
-            } else {
-                 document.querySelectorAll('.trend-filter-btn').forEach(btn => btn.classList.remove('active'));
-            }
 
-            const { totalIncome, totalExpense, totalWithdrawal, startLabel, endLabel, startIndex, endIndex } = getTrendData(rangeOrStart, end);
-            
-            if (end === null) {
-                 const startSelect = document.getElementById('trend-start-month');
-                 const endSelect = document.getElementById('trend-end-month');
-                 if(startSelect && endSelect){
-                     startSelect.value = startIndex;
-                     endSelect.value = endIndex;
-                 }
-            }
-
-            // Real "Selisih" Calculation: Income - Expense - Withdrawal
-            // Withdrawal is stored as a positive number in data but represents outflow.
-            // If user input is "500000", totalWithdrawal = 500000.
-            // Selisih = Income - Expense - Withdrawal.
-            const selisih = totalIncome - totalExpense - totalWithdrawal;
-
-            const periodLabel = document.getElementById('trend-period-label');
-            if (periodLabel) {
-                periodLabel.textContent = (startLabel === endLabel) ? `Periode: ${startLabel}` : `Periode: ${startLabel} - ${endLabel}`;
-            }
-
-            const summaryContainer = document.getElementById('trend-summary');
-            summaryContainer.innerHTML = `
-                <div class="trend-summary-item">
-                    <h4>Pemasukan 📥</h4>
-                    <div class="value income">${formatCurrency(totalIncome)}</div>
-                </div>
-                <div class="trend-summary-item">
-                    <h4>Pengeluaran 📤</h4>
-                    <div class="value expense">Rp -${new Intl.NumberFormat('id-ID').format(totalExpense)}</div>
-                </div>
-                 <div class="trend-summary-item">
-                    <h4>Penarikan Aset (Darurat) 📤</h4>
-                    <div class="value withdrawal">Rp -${new Intl.NumberFormat('id-ID').format(totalWithdrawal)}</div>
-                </div>
-                <div class="trend-summary-item">
-                    <h4>Selisih Bersih (Net) 💰</h4>
-                    <div class="value ${selisih >= 0 ? 'income' : 'expense'}">${formatCurrency(selisih)}</div>
-                </div>
-            `;
-
-            if (trendChart) trendChart.destroy();
-
-            trendChart = new Chart(trendCtx, {
-                type: 'pie',
-                data: {
-                    labels: ['Pemasukan', 'Pengeluaran', 'Penarikan Aset'],
-                    datasets: [{
-                        data: [totalIncome, totalExpense, totalWithdrawal],
-                        backgroundColor: [
-                            'rgba(16, 185, 129, 0.7)', // Hijau (Income)
-                            'rgba(239, 68, 68, 0.7)',  // Merah (Expense)
-                            'rgba(245, 158, 11, 0.7)'   // Kuning/Oranye (Withdrawal)
-                        ],
-                        borderColor: '#1f2937',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'bottom', labels: { color: '#f3f4f6' } },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    if (context.parsed !== null) {
-                                        // Always show positive numbers in pie tooltip for clearer pie proportions
-                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed);
-                                    }
-                                    return label;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
 
         async function generatePDF() {
+
             const btn = document.getElementById('download-pdf-btn');
+
             btn.textContent = 'Membuat PDF...';
+
             btn.disabled = true;
 
+
+
             const monthKey = availableMonths[currentMonthIndex];
+
             const data = financeData[monthKey];
+
             const { dashboard, pemasukan, pengeluaran } = data;
 
+
+
             const [year, month] = monthKey.split('-');
+
             const date = new Date(year, month - 1);
+
             const monthName = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
+
+
             const doc = new jsPDF();
+
             let currentY = 22;
 
+
+
             doc.setFontSize(18);
+
             doc.text(`Laporan Keuangan - ${monthName}`, 14, currentY);
+
             currentY += 15;
 
+
+
             doc.setFontSize(12);
+
             doc.text('Ringkasan Keuangan', 14, currentY);
+
             currentY += 7;
+
             
+
             const summaryData = [
+
                 ['Total Pemasukan Liquid', formatCurrency(dashboard.pemasukan)],
+
                 ['Anggaran Pengeluaran', formatCurrency(dashboard.pengeluaran)],
+
                 ['Realisasi Pengeluaran', formatCurrency(dashboard.realisasi)],
+
                 ['Sisa Kas (Surplus)', formatCurrency(dashboard.sisaKas)],
+
                 ['Sisa Uang Riil', formatCurrency(dashboard.sisaUangRiil)],
+
                 ['Saving Rate', `${dashboard.rasioTabungan.toFixed(1)}%`],
+
                 ['Total Aset Kumulatif', formatCurrency(dashboard.totalAset)],
+
             ];
 
+
+
             doc.autoTable({
+
                 startY: currentY,
+
                 body: summaryData,
+
                 theme: 'plain',
+
                 styles: { fontSize: 10 }
+
             });
+
             currentY = doc.autoTable.previous.finalY + 15;
+
+
 
             // --- Tabel Pemasukan ---
+
             doc.setFontSize(12);
+
             doc.text('Rincian Pemasukan', 14, currentY);
+
             currentY += 7;
+
             doc.autoTable({
+
                 startY: currentY,
+
                 head: [['Sumber Pemasukan', 'Jumlah', 'Status']],
+
                 body: pemasukan.map(p => [p.sumber, formatCurrency(p.jumlah), p.status]),
+
                 theme: 'striped',
+
                 headStyles: { fillColor: [59, 130, 246] }
+
             });
+
             currentY = doc.autoTable.previous.finalY + 15;
+
+
 
             // --- Tabel Pengeluaran ---
+
             doc.setFontSize(12);
+
             doc.text('Rincian Pengeluaran', 14, currentY);
+
             currentY += 7;
+
             doc.autoTable({
+
                 startY: currentY,
+
                 head: [['Kategori', 'Item', 'Anggaran', 'Aktual', 'Selisih', 'Catatan']],
+
                 body: pengeluaran.map(p => [
+
                     p.kategori,
+
                     p.item,
+
                     formatCurrency(p.anggaran),
+
                     formatCurrency(p.aktual || 0),
+
                     formatCurrency(p.anggaran - (p.aktual || 0)),
+
                     p.catatan
+
                 ]),
+
                 theme: 'striped',
+
                 headStyles: { fillColor: [59, 130, 246] }
+
             });
+
             currentY = doc.autoTable.previous.finalY + 15;
 
+
+
             // --- Grafik ---
+
             if (currentY > 180) { // Cek jika butuh halaman baru sebelum grafik
+
                 doc.addPage();
+
                 currentY = 20;
+
             }
+
+
 
             doc.setFontSize(12);
+
             doc.text('Visualisasi Data', 14, currentY);
+
             currentY += 7;
 
+
+
             const allocationCanvas = document.getElementById('allocationChart');
+
             const expenseCanvas = document.getElementById('expenseChart');
+
             
+
             try {
+
                 const allocationImage = await html2canvas(allocationCanvas, { backgroundColor: null });
+
                 const allocationImageData = allocationImage.toDataURL('image/png');
+
                 doc.addImage(allocationImageData, 'PNG', 14, currentY, 80, 80);
+
                 
+
                 const expenseImage = await html2canvas(expenseCanvas, { backgroundColor: null });
+
                 const expenseImageData = expenseImage.toDataURL('image/png');
+
                 doc.addImage(expenseImageData, 'PNG', 105, currentY, 90, 80);
+
             } catch (error) {
+
                 console.error("Error generating chart images:", error);
+
                 doc.text("Gagal membuat gambar grafik.", 14, currentY + 10);
+
             }
+
             
+
             doc.save(`Laporan_Keuangan_${monthName.replace(/\s/g, '_')}.pdf`);
+
             
+
             btn.textContent = 'Unduh Laporan PDF';
+
             btn.disabled = false;
+
         }
+
+
+
 
 
         function recalculateAndRender() {
+
             const monthKey = availableMonths[currentMonthIndex];
+
             const data = financeData[monthKey];
+
             
+
             const pemasukanOperasionalLiquid = data.pemasukan.reduce((sum, item) => {
+
                 if ((item.status || '').toLowerCase() === 'liquid' && !item.untukDanaStrategis) {
+
                     return sum + item.jumlah;
+
                 }
+
                 return sum;
+
             }, 0);
+
             
+
             const totalPemasukanLiquidBruto = data.pemasukan.reduce((sum, item) => {
+
                  if ((item.status || '').toLowerCase() === 'liquid') {
+
                     return sum + item.jumlah;
+
                 }
+
                 return sum;
+
             }, 0);
+
+
 
             const totalPengeluaran = data.pengeluaran.reduce((sum, item) => sum + item.anggaran, 0);
+
             const totalRealisasi = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
+
             
+
             const sisaKas = pemasukanOperasionalLiquid - totalPengeluaran;
 
+
+
             const totalPemasukanRiil = data.pemasukan.reduce((sum, item) => (item.status || '').toLowerCase() === 'liquid' ? sum + item.jumlah : sum, 0);
+
             const sisaUangRiil = totalPemasukanRiil - totalRealisasi;
 
+
+
             const pemasukanStrategisLangsung = totalPemasukanLiquidBruto - pemasukanOperasionalLiquid;
+
             const totalTabunganBulanIni = sisaKas + pemasukanStrategisLangsung;
+
             const rasioTabungan = totalPemasukanLiquidBruto > 0 ? (totalTabunganBulanIni / totalPemasukanLiquidBruto) * 100 : 0;
+
             
+
             const totalAset = calculateTotalAssets(currentMonthIndex);
 
+
+
             let sisaKasUntukDialokasikan = sisaKas;
+
             const danaSisaItem = data.alokasi.find(item => item.persentase === undefined);
+
             const itemDenganPersentase = data.alokasi.filter(item => item.persentase !== undefined);
 
+
+
             itemDenganPersentase.forEach(item => {
+
                 if (typeof item.persentase !== 'number') {
+
                     item.persentase = parseFloat(String(item.persentase).replace(',', '.')) || 0;
+
                 }
+
                 const alokasiBulat = Math.round(sisaKas * (item.persentase / 100));
+
                 item.jumlah = Math.min(alokasiBulat, sisaKasUntukDialokasikan);
+
                 sisaKasUntukDialokasikan -= item.jumlah;
+
             });
 
+
+
             if (danaSisaItem) {
+
                 danaSisaItem.jumlah = Math.max(0, sisaKasUntukDialokasikan);
+
             }
 
+
+
             if (data.danaStrategis) {
+
                 if (!data.danaStrategis.komponen) data.danaStrategis.komponen = [];
+
+
 
                 const danaDariSisaKas = data.alokasi.find(item => item.nama === 'Dana Kuliah')?.jumlah || 0;
 
+
+
                 // Filter Components
+
                 const manualKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('manual_'));
+
                 let autoKomponen = data.danaStrategis.komponen.filter(c => c.id && c.id.startsWith('auto_'));
+
                 
+
                 // Auto Component Logic
+
                 if (!autoKomponen.find(c => c.id === 'auto_sisa_kas')) autoKomponen.push({ id: 'auto_sisa_kas', nama: 'Alokasi dari Sisa Kas', status: '✅ Siap digunakan', jumlah: 0 });
+
                 const sisaKasComponent = autoKomponen.find(c => c.id === 'auto_sisa_kas');
+
                 if (sisaKasComponent) sisaKasComponent.jumlah = danaDariSisaKas;
 
+
+
                 // Pemasukan Component Logic
+
                 const pemasukanKomponen = data.pemasukan
+
                     .filter(p => p.untukDanaStrategis)
+
                     .map((p, i) => ({
+
                         id: `pemasukan_${i}`,
+
                         nama: p.sumber,
+
                         status: `Dari Pemasukan (${p.status})`,
+
                         jumlah: p.jumlah
+
                     }));
 
+
+
                 data.danaStrategis.komponen = [...autoKomponen, ...pemasukanKomponen, ...manualKomponen];
+
             }
+
+
 
             data.dashboard = {
+
                 pemasukan: totalPemasukanLiquidBruto,
+
                 pengeluaran: totalPengeluaran,
+
                 realisasi: totalRealisasi,
+
                 sisaKas: sisaKas,
+
                 sisaUangRiil: sisaUangRiil,
+
                 rasioTabungan: rasioTabungan,
+
                 totalAset: totalAset
+
             };
 
+
+
             renderUI(monthKey);
-            // Update trend chart whenever data changes
-            const activeFilterBtn = document.querySelector('.trend-filter-btn.active');
-            const range = activeFilterBtn ? activeFilterBtn.dataset.range : 12;
-            updateTrendChart(range === 'all' ? 'all' : parseInt(range));
+
         }
+
+
 
         function renderUI(monthKey) {
+
             const data = financeData[monthKey];
+
             const { dashboard } = data;
+
             
+
             const [year, month] = monthKey.split('-');
+
             const date = new Date(year, month - 1);
+
             document.getElementById('current-month-display').textContent = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
 
+
+
             document.getElementById('total-pemasukan').textContent = formatCurrency(dashboard.pemasukan);
+
             document.getElementById('total-pengeluaran').textContent = `(${formatCurrency(dashboard.pengeluaran)})`;
+
             document.getElementById('pengeluaran-note').innerHTML = `Realisasi: <strong>${formatCurrency(dashboard.realisasi)}</strong>`;
+
             document.getElementById('sisa-kas').textContent = formatCurrency(dashboard.sisaKas);
+
             document.getElementById('rasio-tabungan').textContent = `${dashboard.rasioTabungan.toFixed(1)}%`;
+
             document.getElementById('total-aset').textContent = formatCurrency(dashboard.totalAset);
+
             
+
             // Set nilai input penarikan aset
+
             const penarikanInput = document.getElementById('penarikan-aset-input');
+
             if (penarikanInput) {
+
                 penarikanInput.value = formatCurrency(data.penarikanAset || 0);
+
             }
+
+
 
             updateHeadersForMobileView();
+
             renderAllocationDetails(data.alokasi);
+
             renderStrategicFund(data);
+
             renderIncomeTable(data.pemasukan, dashboard.pemasukan);
+
             renderExpenseTable(data.pengeluaran, dashboard.pengeluaran);
+
             renderRencanaAksi(data.rencanaAksi);
+
             updateAllocationChart(data.alokasi);
+
             updateExpenseChart(data.pengeluaran);
+
             
+
             document.getElementById('prev-month-btn').disabled = (currentMonthIndex === 0);
+
             document.getElementById('next-month-btn').disabled = (currentMonthIndex === availableMonths.length - 1);
+
             checkTableOverflow();
+
         }
+
+
 
         function renderAllocationDetails(alokasiData) {
+
             const container = document.getElementById('allocation-details-container');
+
             container.innerHTML = '';
+
             alokasiData.forEach((item, index) => {
+
                 let progressHTML = '';
+
                 if (item.target > 0) {
+
                     const progressPercentage = Math.min((item.jumlah / item.target) * 100, 100);
+
                     progressHTML = `
+
                         <div class="target-info">Target: ${formatCurrency(item.target)}</div>
+
                         <div class="progress-bar-container">
+
                             <div class="progress-bar" style="width: ${progressPercentage}%;"></div>
+
                         </div>
+
                     `;
+
                 }
 
+
+
                 const isEditableByPercentage = item.persentase !== undefined;
+
                 const amountHTML = `<div class="amount">${formatCurrency(item.jumlah)}</div>`;
+
                 const persenNote = isEditableByPercentage ? 
+
                     `<div class="note-persen">(<span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="persentase">${item.persentase.toFixed(1)}</span>% dari Sisa Kas)</div>` : '';
 
+
+
                 const cardHTML = `
+
                     <div class="allocation-card">
+
                         <h3>${item.ikon} <span contenteditable="true" data-type="alokasi" data-index="${index}" data-field="nama">${item.nama}</span></h3>
+
                         ${amountHTML}
+
                         ${persenNote}
+
                         ${progressHTML}
+
                         <p><strong>Tujuan:</strong> ${item.deskripsi}</p>
+
                         <p><strong>Strategi:</strong> ${item.strategi}</p>
+
                     </div>`;
+
                 container.innerHTML += cardHTML;
+
             });
+
         }
+
         
+
         function renderStrategicFund(data) {
+
             const section = document.getElementById('strategic-fund-section');
+
             const container = document.getElementById('strategic-fund-container');
+
             const strategicData = data.danaStrategis;
+
             
+
             if (!strategicData) {
+
                 section.style.display = 'none';
+
                 return;
+
             }
+
             section.style.display = 'block';
+
             
+
             const komponen = strategicData.komponen || [];
+
             const totalDanaSiaga = komponen.reduce((sum, item) => sum + item.jumlah, 0);
+
             const targetDana = strategicData.target;
+
             const progressPercentage = targetDana > 0 ? Math.min((totalDanaSiaga / targetDana) * 100, 100) : 0;
+
             
+
             // Filter hanya komponen manual yang bisa dihapus atau diedit
+
             const manualKomponen = komponen.filter(c => c.id && c.id.startsWith('manual_'));
 
-            const componentsHTML = komponen.map((item, index) => {
-                const isAuto = item.id && (item.id.startsWith('auto_') || item.id.startsWith('pemasukan_'));
-                
-                // Gunakan ID unik untuk tombol delete dan edit
-                const nameHTML = isAuto ? `<span class="component-name">${item.nama}</span>` : `<span class="component-name" contenteditable="true" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="nama">${item.nama}</span>`;
-                const statusHTML = isAuto ? `<span class="component-status">${item.status}</span>` : `<span class="component-status" contenteditable="true" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="status">${item.status}</span>`;
-                const amountHTML = isAuto ?
-                    `<span class="component-amount">${formatCurrency(item.jumlah)}</span>` :
-                    `<input type="text" class="editable-amount component-amount" value="${formatCurrency(item.jumlah)}" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="jumlah" style="${item.jumlah < 0 ? 'color: var(--danger-color); font-weight: bold;' : ''}">`;
 
-                const deleteBtnHTML = !isAuto ? `<button class="delete-btn" data-type="danaStrategisKomponen" data-id="${item.id}">&#128465;</button>` : '';
+
+            const componentsHTML = komponen.map((item, index) => {
+
+                const isAuto = item.id && (item.id.startsWith('auto_') || item.id.startsWith('pemasukan_'));
+
+                // const isManual = item.id && item.id.startsWith('manual_'); // Not needed for logic here, but good for understanding
+
+                
+
+                // Jika manual, cari index relatifnya di array manualKomponen (not used for ID based deletion, but logic kept same)
+
+                // const manualIndex = isManual ? manualKomponen.findIndex(mc => mc.id === item.id) : -1;
+
+                
+
+                let nameHTML, statusHTML, amountHTML, deleteBtnHTML;
+
+
+
+                if (isAuto) {
+
+                    nameHTML = `<span class="component-name">${item.nama}</span>`;
+
+                    statusHTML = `<span class="component-status">${item.status}</span>`;
+
+                    amountHTML = `<span class="component-amount">${formatCurrency(item.jumlah)}</span>`;
+
+                    deleteBtnHTML = '';
+
+                } else {
+
+                    // Gunakan ID unik (item.id) untuk referensi data
+
+                    nameHTML = `<span class="component-name" contenteditable="true" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="nama">${item.nama}</span>`;
+
+                    statusHTML = `<span class="component-status" contenteditable="true" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="status">${item.status}</span>`;
+
+                    amountHTML = `<input type="text" class="editable-amount component-amount" value="${formatCurrency(item.jumlah)}" data-type="danaStrategisKomponen" data-id="${item.id}" data-field="jumlah">`;
+
+                    deleteBtnHTML = `<button class="delete-btn" data-type="danaStrategisKomponen" data-id="${item.id}">&#128465;</button>`;
+
+                }
+
+
 
                 return `
+
                     <li class="component-item">
+
                         <div>${nameHTML}${statusHTML}</div>
+
                         <div style="display: flex; align-items: center; gap: 10px;">
+
                            ${amountHTML}
+
                            ${deleteBtnHTML}
+
                         </div>
+
                     </li>
+
                 `;
+
             }).join('');
 
+
+
             container.innerHTML = `
+
                 <div class="strategic-fund-card">
+
                     <h3>💰 <span contenteditable="true" data-type="danaStrategis" data-field="judul">${strategicData.judul}</span></h3>
+
                     <p contenteditable="true" data-type="danaStrategis" data-field="deskripsi">${strategicData.deskripsi}</p>
+
                      <div class="target-info">Terkumpul: <strong>${formatCurrency(totalDanaSiaga)}</strong> dari <span contenteditable="true" data-type="danaStrategis" data-field="target">${formatCurrency(targetDana)}</span></div>
+
                     <div class="progress-bar-container" style="margin-bottom: 20px;">
+
                         <div class="progress-bar" style="width: ${progressPercentage}%;"></div>
+
                     </div>
+
                     <ul class="component-list">${componentsHTML}</ul>
+
                     <button id="add-strategic-component-btn" class="add-row-btn" style="margin-top: 15px; width: 100%;">+ Tambah Komponen Manual</button>
+
                     <div class="summary">Total Dana Siaga: <span class="total-fund">${formatCurrency(totalDanaSiaga)}</span></div>
+
                 </div>
+
             `;
+
         }
+
+
+
 
 
         function renderIncomeTable(pemasukanData, totalPemasukanOperasional) {
+
             const tableBody = document.getElementById('income-table-body');
+
             tableBody.innerHTML = '';
+
             pemasukanData.forEach((item, index) => {
+
                 const statusOptions = ['liquid', 'illiquid', 'none'];
+
                 const optionsHTML = statusOptions.map(opt =>
+
                     `<option value="${opt}" ${item.status && item.status.toLowerCase() === opt ? 'selected' : ''}>${opt.charAt(0).toUpperCase() + opt.slice(1)}</option>`
+
                 ).join('');
 
+
+
                 const row = `
+
                     <tr>
+
                         <td contenteditable="true" data-type="pemasukan" data-index="${index}" data-field="sumber">${item.sumber}</td>
+
                         <td><input type="text" class="editable-amount" value="${formatCurrency(item.jumlah)}" data-type="pemasukan" data-index="${index}" data-field="jumlah"></td>
+
                         <td><select class="status-select" data-type="pemasukan" data-index="${index}" data-field="status">${optionsHTML}</select></td>
+
                         <td><input type="checkbox" class="strategic-checkbox" data-type="pemasukanStrategis" data-index="${index}" ${item.untukDanaStrategis ? 'checked' : ''}></td>
+
                         <td><button class="delete-btn" data-type="pemasukan" data-index="${index}">&#128465;</button></td>
+
                     </tr>`;
+
                 tableBody.innerHTML += row;
+
             });
+
             document.getElementById('income-table-foot').innerHTML = `<tr><td>TOTAL PEMASUKAN</td><td>${formatCurrency(pemasukanData.reduce((sum, item) => sum + item.jumlah, 0))}</td><td colspan="3"></td></tr>`;
+
         }
+
         
+
         function renderExpenseTable(pengeluaranData, totalPengeluaran) {
+
             const tableBody = document.getElementById('expense-table-body');
+
             tableBody.innerHTML = '';
+
             pengeluaranData.forEach((item, index) => {
+
                 const aktual = item.aktual || 0;
+
                 const selisih = item.anggaran - aktual;
+
                 const selisihClass = selisih >= 0 ? 'selisih-hemat' : 'selisih-boros';
+
                 const row = `
+
                     <tr>
+
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="kategori">${item.kategori}</td>
+
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="item">${item.item}</td>
+
                         <td><input type="text" class="editable-amount" value="${formatCurrency(item.anggaran)}" data-type="pengeluaran" data-index="${index}" data-field="anggaran"></td>
+
                         <td><input type="text" class="editable-amount" value="${formatCurrency(aktual)}" data-type="pengeluaran" data-index="${index}" data-field="aktual"></td>
+
                         <td class="${selisihClass}">${formatCurrency(selisih)}</td>
+
                         <td contenteditable="true" data-type="pengeluaran" data-index="${index}" data-field="catatan">${item.catatan}</td>
+
                         <td><button class="delete-btn" data-type="pengeluaran" data-index="${index}">&#128465;</button></td>
+
                     </tr>`;
+
                 tableBody.innerHTML += row;
+
             });
+
+
 
             const totalAktual = pengeluaranData.reduce((sum, item) => sum + (item.aktual || 0), 0);
+
             const totalSelisih = totalPengeluaran - totalAktual;
+
             const totalSelisihClass = totalSelisih >= 0 ? 'selisih-hemat' : 'selisih-boros';
+
              document.getElementById('expense-table-foot').innerHTML = `
+
                 <tr>
+
                     <td colspan="2">TOTAL</td>
+
                     <td>${formatCurrency(totalPengeluaran)}</td>
+
                     <td>${formatCurrency(totalAktual)}</td>
+
                     <td class="${totalSelisihClass}">${formatCurrency(totalSelisih)}</td>
+
                     <td colspan="2"></td>
+
                 </tr>`;
+
         }
+
+
 
         function renderRencanaAksi(rencanaData) {
+
             const container = document.getElementById('rencana-aksi-section');
+
             if(!rencanaData) { container.style.display = 'none'; return; };
+
             container.style.display = 'block';
+
             while (container.children.length > 1) { container.removeChild(container.lastChild); }
+
             rencanaData.forEach((item, index) => {
+
                 const sopItem = document.createElement('div');
+
                 sopItem.className = 'sop-item';
+
                 const pointsHtml = item.poin.map((p, pointIndex) => `<li contenteditable="true" data-type="rencanaAksi" data-index="${index}" data-point-index="${pointIndex}">${p}</li>`).join('');
+
                 sopItem.innerHTML = `<h4 contenteditable="true" data-type="rencanaAksi" data-index="${index}" data-field="judul">${item.judul}</h4><ul>${pointsHtml}</ul>`;
+
                 container.appendChild(sopItem);
+
             });
+
         }
+
         
+
         function updateAllocationChart(alokasiData) {
+
             if (allocationChart) allocationChart.destroy();
+
             allocationChart = new Chart(allocationCtx, {
+
                 type: 'doughnut',
+
                 data: {
+
                     labels: alokasiData.map(item => item.nama),
+
                     datasets: [{ data: alokasiData.map(item => item.jumlah), backgroundColor: alokasiData.map(item => item.warna), borderColor: '#1f2937', borderWidth: 4 }]
+
                 },
+
                 options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.parsed)}` } } } }
+
             });
+
         }
+
+
 
         function updateExpenseChart(pengeluaranData) {
+
             const categoryTotals = pengeluaranData.reduce((acc, item) => {
+
                 if (!acc[item.kategori]) { acc[item.kategori] = { anggaran: 0, aktual: 0 }; }
+
                 acc[item.kategori].anggaran += item.anggaran;
+
                 acc[item.kategori].aktual += (item.aktual || 0);
+
                 return acc;
+
             }, {});
+
             const labels = Object.keys(categoryTotals);
+
             const anggaranData = labels.map(label => categoryTotals[label].anggaran);
+
             const aktualData = labels.map(label => categoryTotals[label].aktual);
 
+
+
             if (expenseChart) expenseChart.destroy();
+
             expenseChart = new Chart(expenseCtx, {
+
                 type: 'bar',
+
                 data: {
+
                     labels: labels,
+
                     datasets: [
+
                         { label: 'Anggaran', data: anggaranData, backgroundColor: 'rgba(59, 130, 246, 0.5)', borderColor: 'rgba(59, 130, 246, 1)', borderWidth: 1 },
+
                         { label: 'Aktual', data: aktualData, backgroundColor: 'rgba(16, 185, 129, 0.7)', borderColor: 'rgba(16, 185, 129, 1)', borderWidth: 1 }
+
                     ]
+
                 },
+
                 options: { indexAxis: 'y', responsive: true, plugins: { legend: { position: 'top' }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${formatCurrency(c.parsed.x)}` } } } }
+
             });
+
         }
+
         
+
         function handleContentAction(event) {
+
             const target = event.target;
+
+
 
             if (target.id === 'print-card-btn') { window.print(); return; }
 
+
+
             const monthKey = availableMonths[currentMonthIndex];
+
             const data = financeData[monthKey];
 
+
+
             if (target.id === 'add-strategic-component-btn') {
+
                 if (data.danaStrategis && data.danaStrategis.komponen) {
+
                     data.danaStrategis.komponen.push({
+
                         id: 'manual_' + Date.now(),
+
                         nama: 'Komponen Baru',
+
                         status: 'Keterangan',
+
                         jumlah: 0
+
                     });
+
                     saveDataToLocalStorage();
+
                     recalculateAndRender();
+
                 }
+
                 return;
+
             }
 
-            // --- FUNGSI CUSTOM TREND BUTTON ---
-            if (target.id === 'apply-custom-trend') {
-                const startIdx = document.getElementById('trend-start-month').value;
-                const endIdx = document.getElementById('trend-end-month').value;
-                updateTrendChart(startIdx, endIdx);
-                return;
-            }
+
 
             const dataType = target.dataset.type;
+
             if (!dataType) return;
+
             
+
             let needsRecalculate = false;
+
             let needsSave = false;
 
+
+
             if (dataType === 'penarikanAset' && event.type === 'change') {
+
                 data.penarikanAset = parseCurrency(target.value);
+
                 needsRecalculate = true;
+
                 needsSave = true;
+
             }
+
             else if (dataType === 'pemasukanStrategis' && target.tagName === 'INPUT' && target.type === 'checkbox') {
+
                 const index = parseInt(target.dataset.index, 10);
+
                 data.pemasukan[index].untukDanaStrategis = target.checked;
+
                 needsRecalculate = true;
+
                 needsSave = true;
+
             } else if (target.tagName === 'SELECT' && event.type === 'change') {
+
                 const index = parseInt(target.dataset.index, 10);
+
                 const field = target.dataset.field;
+
                 data[dataType][index][field] = target.value;
+
                 needsRecalculate = true;
+
                 needsSave = true;
+
             } 
+
             else if (target.classList.contains('editable-amount') && event.type === 'change') {
+
                 const field = target.dataset.field;
+
                 const value = parseCurrency(target.value);
 
+
+
                 if (dataType === 'danaStrategisKomponen') {
+
                     // Update by ID for strategic components
+
                     const id = target.dataset.id;
+
                     const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === id);
+
                     if(componentToUpdate) componentToUpdate[field] = value;
+
                 } else {
+
                     const index = parseInt(target.dataset.index, 10);
+
                     data[dataType][index][field] = value;
+
                 }
+
                 needsRecalculate = true;
+
                 needsSave = true;
+
             } else if (target.hasAttribute('contenteditable') && event.type === 'blur') {
+
                 const field = target.dataset.field;
+
                 const value = target.textContent;
+
                 
+
                 if (dataType === 'danaStrategis') {
+
                     if (field === 'target') data[dataType][field] = parseCurrency(value);
+
                     else data[dataType][field] = value;
+
                     needsSave = true;
+
                 } else if (dataType === 'danaStrategisKomponen') {
+
                     const id = target.dataset.id;
+
                     const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === id);
+
                     if (componentToUpdate) componentToUpdate[field] = value;
+
                     needsSave = true;
+
                 } else if (dataType === 'alokasi') {
+
                     const index = parseInt(target.dataset.index, 10);
+
                     if (field === 'persentase') data.alokasi[index][field] = parseFloat(value.replace(',', '.')) || 0;
+
                     else if (field === 'nama') data.alokasi[index][field] = value;
+
                     needsRecalculate = true; // Recalculate for percentage change
+
                     needsSave = true;
+
                 } else if (dataType === 'rencanaAksi') { 
+
                     const index = parseInt(target.dataset.index, 10);
+
                     const pointIndex = target.dataset.pointIndex; 
+
                     if (pointIndex !== undefined) data.rencanaAksi[index].poin[parseInt(pointIndex, 10)] = value;
+
                     else if (field === 'judul') data.rencanaAksi[index].judul = value;
+
                     needsSave = true;
+
                 } else { 
+
                     const index = parseInt(target.dataset.index, 10);
+
                     data[dataType][index][field] = value;
+
                     needsSave = true;
+
                 }
+
             } else if (target.classList.contains('delete-btn')) {
+
                 showCustomConfirm('Anda yakin ingin menghapus baris ini?', (confirmed) => {
+
                     if (confirmed) {
+
                         if (dataType === 'danaStrategisKomponen') {
+
                             const idToDelete = target.dataset.id;
+
                             data.danaStrategis.komponen = data.danaStrategis.komponen.filter(c => c.id !== idToDelete);
+
                         } else {
+
                              const index = parseInt(target.dataset.index, 10);
+
                              data[dataType].splice(index, 1);
+
                         }
+
                         saveDataToLocalStorage();
+
                         recalculateAndRender();
+
                     }
+
                 });
+
             }
+
+
 
             if(needsSave) saveDataToLocalStorage();
+
             if(needsRecalculate) recalculateAndRender();
+
         }
+
+
 
         // --- EVENT LISTENERS ---
+
         const nextBtn = document.getElementById('next-month-btn');
+
         const prevBtn = document.getElementById('prev-month-btn');
+
         const addIncomeBtn = document.getElementById('add-income-btn');
+
         const addExpenseBtn = document.getElementById('add-expense-btn');
+
         const addMonthBtn = document.getElementById('add-month-btn');
+
         const resetBtn = document.getElementById('reset-data-btn');
+
         const downloadBtn = document.getElementById('download-pdf-btn');
+
         const confirmBtn = document.getElementById('modal-confirm-btn');
+
         const cancelBtn = document.getElementById('modal-cancel-btn');
 
+
+
         if(nextBtn) nextBtn.addEventListener('click', () => { if (currentMonthIndex < availableMonths.length - 1) { currentMonthIndex++; recalculateAndRender(); } });
+
         if(prevBtn) prevBtn.addEventListener('click', () => { if (currentMonthIndex > 0) { currentMonthIndex--; recalculateAndRender(); } });
+
         
+
         if(addIncomeBtn) addIncomeBtn.addEventListener('click', () => {
+
             financeData[availableMonths[currentMonthIndex]].pemasukan.push({ sumber: 'Sumber Baru', jumlah: 0, status: 'none', untukDanaStrategis: false });
+
             saveDataToLocalStorage();
+
             recalculateAndRender();
+
         });
+
         
+
         if(addExpenseBtn) addExpenseBtn.addEventListener('click', () => {
+
             financeData[availableMonths[currentMonthIndex]].pengeluaran.push({ kategori: 'Kategori Baru', item: 'Item Baru', anggaran: 0, aktual: 0, catatan: '-' });
+
             saveDataToLocalStorage();
+
             recalculateAndRender();
+
         });
+
         
+
         if(addMonthBtn) addMonthBtn.addEventListener('click', () => {
+
             const lastMonthKey = availableMonths[availableMonths.length - 1];
+
             const [year, month] = lastMonthKey.split('-').map(Number);
+
             let nextYear = year;
+
             let nextMonth = month + 1;
+
             if (nextMonth > 12) { nextMonth = 1; nextYear++; }
+
             const newMonthKey = `${nextYear}-${String(nextMonth).padStart(2, '0')}`;
+
             if (!financeData[newMonthKey]) {
+
                 Object.assign(financeData, createEmptyMonthData(newMonthKey));
+
                 availableMonths = Object.keys(financeData).sort();
+
                 currentMonthIndex = availableMonths.length - 1;
+
                 saveDataToLocalStorage();
+
                 recalculateAndRender();
+
             }
+
         });
+
+
 
         const container = document.querySelector('.container');
+
         if(container) {
+
             container.addEventListener('change', handleContentAction);
+
             container.addEventListener('click', handleContentAction);
+
             container.addEventListener('blur', handleContentAction, true);
+
         }
 
+
+
         // Confirmation Modal Listeners
+
         if(confirmBtn) confirmBtn.addEventListener('click', () => {
+
             modal.style.display = 'none';
+
             if (confirmCallback) confirmCallback(true);
+
             confirmCallback = null;
-        });
-        if(cancelBtn) cancelBtn.addEventListener('click', () => {
-            modal.style.display = 'none';
-            if (confirmCallback) confirmCallback(false);
-            confirmCallback = null;
+
         });
 
-        if(resetBtn) resetBtn.addEventListener('click', () => {
-            showCustomConfirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?', (confirmed) => {
-                if(confirmed) { localStorage.removeItem(STORAGE_KEY); location.reload(); }
-            });
+        if(cancelBtn) cancelBtn.addEventListener('click', () => {
+
+            modal.style.display = 'none';
+
+            if (confirmCallback) confirmCallback(false);
+
+            confirmCallback = null;
+
         });
+
+
+
+        if(resetBtn) resetBtn.addEventListener('click', () => {
+
+            showCustomConfirm('PERINGATAN: Aksi ini akan menghapus semua data dan mengembalikan aplikasi ke kondisi awal yang kosong untuk tahun ini. Lanjutkan?', (confirmed) => {
+
+                if(confirmed) { localStorage.removeItem(STORAGE_KEY); location.reload(); }
+
+            });
+
+        });
+
+
 
         if(downloadBtn) downloadBtn.addEventListener('click', generatePDF);
 
+
+
         // --- INISIALISASI ---
+
         document.addEventListener('DOMContentLoaded', () => {
+
             const savedData = localStorage.getItem(STORAGE_KEY);
+
             if (savedData) {
+
                 financeData = JSON.parse(savedData);
+
             } else {
+
                 const today = new Date();
+
                 const currentYear = today.getFullYear();
+
                 let newYearData = {};
+
                 for (let i = 0; i < 12; i++) {
+
                     const monthKey = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+
                     Object.assign(newYearData, createEmptyMonthData(monthKey));
+
                 }
+
                 financeData = newYearData;
+
                 saveDataToLocalStorage();
+
             }
+
             availableMonths = Object.keys(financeData).sort();
+
             
+
             const today = new Date();
+
             const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+
             const startingIndex = availableMonths.indexOf(currentMonthKey);
+
             currentMonthIndex = startingIndex !== -1 ? startingIndex : 0;
 
+
+
             Chart.defaults.color = '#9ca3af';
+
             Chart.defaults.borderColor = '#374151';
 
+
+
             recalculateAndRender();
+
             window.addEventListener('resize', () => { updateHeadersForMobileView(); checkTableOverflow(); });
-            // Initial call to set active button state and dropdowns
-            populateTrendMonthSelectors();
-            updateTrendChart(12);
+
         });
+
     </script>
 
+
+
 </body>
+
 </html>
