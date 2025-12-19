@@ -234,7 +234,24 @@
 
         /* ----------------------------------- */
 
+        /* Container Umum untuk Grafik Pengeluaran (Bar) */
         .chart-container { position: relative; max-width: 100%; margin: 20px auto; min-height: 300px; }
+
+        /* Container Khusus untuk Grafik Alokasi (Doughnut) agar ukurannya standar & responsif */
+        .chart-container-allocation {
+            position: relative;
+            width: 100%;
+            max-width: 350px; /* Ukuran standar desktop: tidak terlalu besar */
+            height: 350px;    /* Tinggi tetap agar proporsional */
+            margin: 20px auto;
+        }
+
+        @media (max-width: 480px) {
+            .chart-container-allocation {
+                height: 280px; /* Ukuran menyesuaikan HP */
+                max-width: 280px;
+            }
+        }
 
         .allocation-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); }
         .allocation-card { background-color: #374151; border-radius: 10px; padding: 20px; border: 1px solid var(--border-color); }
@@ -456,7 +473,8 @@
 
         <section class="section">
             <h2>Alokasi Sisa Kas Bulanan</h2>
-            <div class="chart-container">
+            <!-- Container Baru Khusus untuk Grafik Alokasi -->
+            <div class="chart-container-allocation">
                 <canvas id="allocationChart"></canvas>
             </div>
             <div id="allocation-details-container" class="allocation-details"></div>
@@ -1287,7 +1305,12 @@
                     labels: alokasiData.map(item => item.nama),
                     datasets: [{ data: alokasiData.map(item => item.jumlah), backgroundColor: alokasiData.map(item => item.warna), borderColor: '#1f2937', borderWidth: 4 }]
                 },
-                options: { responsive: true, cutout: '70%', plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.parsed)}` } } } }
+                options: { 
+                    responsive: true, 
+                    cutout: '70%', 
+                    maintainAspectRatio: false, // Ditambahkan agar patuh pada ukuran container
+                    plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: (c) => `${c.label}: ${formatCurrency(c.parsed)}` } } } 
+                }
             });
         }
 
