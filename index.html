@@ -532,6 +532,36 @@
         </section>
         <!-- AKHIR SEKSI BARU -->
 
+        <!-- SEKSI PORTOFOLIO INVESTASI (NEW) -->
+        <section class="section" id="investment-section">
+            <h2>Portofolio Aset & Investasi</h2>
+            <!-- Kartu Total Aset dengan Gradient Emerald -->
+            <div class="card" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); border: none; margin-bottom: 20px; color: white;">
+                <h3 style="color: #e6fffa; margin-top: 0;">Total Nilai Aset</h3>
+                <div class="amount" id="total-portfolio-value" style="color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">Rp 0</div>
+                <div class="note" style="color: #d1fae5;">Snapshot kekayaan (Net Worth) di bulan ini</div>
+            </div>
+
+            <!-- Tabel Rincian -->
+            <p class="mobile-scroll-hint">Geser tabel untuk melihat semua kolom →</p>
+            <div class="table-wrapper">
+                <table data-table-name="portofolio">
+                    <thead>
+                        <tr>
+                            <th>Nama Aset / Investasi</th>
+                            <th>Kategori</th>
+                            <th>Nilai Saat Ini (Rp)</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="portfolio-table-body">
+                        <!-- Data Portofolio akan di-render di sini -->
+                    </tbody>
+                </table>
+            </div>
+            <button class="add-row-btn" id="add-portfolio-btn">+ Tambah Aset</button>
+        </section>
+
         <!-- SEKSI UNTUK DANA STRATEGIS -->
         <section class="section strategic-fund-section" id="strategic-fund-section" style="display: none;">
              <h2>Detail Dana Strategis</h2>
@@ -641,6 +671,10 @@
                     pemasukan: [],
                     pengeluaran: [],
                     penarikanAset: 0, // Fitur Penarikan Aset
+                    portofolio: [ // Fitur Baru: Portofolio Investasi
+                        { id: 'asset_1', nama: 'Tabungan Emas', kategori: 'Logam Mulia', nominal: 0 },
+                        { id: 'asset_2', nama: 'Reksadana Psr Uang', kategori: 'Reksadana', nominal: 0 }
+                    ],
                     alokasi: [
                         { nama: 'Dana Kuliah', jumlah: 0, target: 0, warna: '#3b82f6', ikon: '🎓', deskripsi: 'Alokasi utama dari sisa kas bulan ini.', strategi: 'Disimpan di rekening terpisah.' },
                         { nama: 'Investasi', jumlah: 0, persentase: 23.8, target: 0, warna: '#10b981', ikon: '📈', deskripsi: 'Alokasikan dana untuk pertumbuhan aset.', strategi: 'Konsisten setiap bulan (DCA).' },
@@ -727,7 +761,7 @@
 
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
-            const { dashboard, pemasukan, pengeluaran } = data;
+            const { dashboard, pemasukan, pengeluaran, portofolio } = data; // Added portofolio
 
             const [year, month] = monthKey.split('-');
             const date = new Date(year, month - 1);
@@ -761,6 +795,26 @@
                 styles: { fontSize: 10 }
             });
             currentY = doc.autoTable.previous.finalY + 15;
+
+            // --- Tabel Portofolio Investasi (New in PDF) ---
+            if (portofolio && portofolio.length > 0) {
+                doc.setFontSize(12);
+                doc.text('Portofolio Aset & Investasi', 14, currentY);
+                currentY += 7;
+                const totalInvestasi = portofolio.reduce((sum, item) => sum + (item.nominal || 0), 0);
+                doc.autoTable({
+                    startY: currentY,
+                    head: [['Nama Aset', 'Kategori', 'Nilai Saat Ini']],
+                    body: [
+                        ...portofolio.map(p => [p.nama, p.kategori, formatCurrency(p.nominal)]),
+                        ['TOTAL NILAI ASET', '', formatCurrency(totalInvestasi)] // Footer Total
+                    ],
+                    theme: 'striped',
+                    headStyles: { fillColor: [5, 150, 105] }, // Emerald Green for Investment
+                    footStyles: { fillColor: [5, 150, 105], fontStyle: 'bold' }
+                });
+                currentY = doc.autoTable.previous.finalY + 15;
+            }
 
             // --- Tabel Pemasukan ---
             doc.setFontSize(12);
@@ -903,6 +957,9 @@
 
                 data.danaStrategis.komponen = [...autoKomponen, ...pemasukanKomponen, ...manualKomponen];
             }
+            
+            // Ensure portofolio array exists (backward compatibility)
+            if (!data.portofolio) data.portofolio = [];
 
             data.dashboard = {
                 pemasukan: totalPemasukanLiquidBruto,
@@ -952,6 +1009,7 @@
             updateHeadersForMobileView();
             renderAllocationDetails(data.alokasi);
             renderStrategicFund(data);
+            renderPortfolioSection(data); // Fungsi Render Baru
             renderIncomeTable(data.pemasukan, dashboard.pemasukan);
             renderExpenseTable(data.pengeluaran, dashboard.pengeluaran);
             renderRencanaAksi(data.rencanaAksi);
@@ -1056,6 +1114,32 @@
                     <div class="summary">Total Dana Siaga: <span class="total-fund">${formatCurrency(totalDanaSiaga)}</span></div>
                 </div>
             `;
+        }
+
+        // --- FUNGSI RENDER PORTOFOLIO (NEW) ---
+        function renderPortfolioSection(data) {
+            const tableBody = document.getElementById('portfolio-table-body');
+            const totalValueDisplay = document.getElementById('total-portfolio-value');
+            const portfolioData = data.portofolio || [];
+
+            tableBody.innerHTML = '';
+            
+            let totalValue = 0;
+
+            portfolioData.forEach((item, index) => {
+                totalValue += (item.nominal || 0);
+                
+                const row = `
+                    <tr>
+                        <td contenteditable="true" data-type="portofolio" data-index="${index}" data-field="nama">${item.nama}</td>
+                        <td contenteditable="true" data-type="portofolio" data-index="${index}" data-field="kategori">${item.kategori}</td>
+                        <td><input type="text" class="editable-amount" value="${formatCurrency(item.nominal)}" data-type="portofolio" data-index="${index}" data-field="nominal"></td>
+                        <td><button class="delete-btn" data-type="portofolio" data-index="${index}">&#128465;</button></td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+
+            totalValueDisplay.textContent = formatCurrency(totalValue);
         }
 
         // --- WRAPPED / TREND ANALYSIS LOGIC (UPDATED) ---
@@ -1492,6 +1576,20 @@
             const monthKey = availableMonths[currentMonthIndex];
             const data = financeData[monthKey];
 
+            // Add handler for Portfolio "Add" button
+            if (target.id === 'add-portfolio-btn') {
+                if (!data.portofolio) data.portofolio = [];
+                data.portofolio.push({
+                    id: 'asset_' + Date.now(),
+                    nama: 'Aset Baru',
+                    kategori: 'Umum',
+                    nominal: 0
+                });
+                saveDataToLocalStorage();
+                recalculateAndRender();
+                return;
+            }
+
             if (target.id === 'add-strategic-component-btn') {
                 if (data.danaStrategis && data.danaStrategis.komponen) {
                     data.danaStrategis.komponen.push({
@@ -1538,6 +1636,10 @@
                     const id = target.dataset.id;
                     const componentToUpdate = data.danaStrategis.komponen.find(c => c.id === id);
                     if(componentToUpdate) componentToUpdate[field] = value;
+                } else if (dataType === 'portofolio') {
+                    // Update Portfolio
+                    const index = parseInt(target.dataset.index, 10);
+                    data.portofolio[index][field] = value;
                 } else {
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = value;
@@ -1569,6 +1671,10 @@
                     if (pointIndex !== undefined) data.rencanaAksi[index].poin[parseInt(pointIndex, 10)] = value;
                     else if (field === 'judul') data.rencanaAksi[index].judul = value;
                     needsSave = true;
+                } else if (dataType === 'portofolio') {
+                    const index = parseInt(target.dataset.index, 10);
+                    data.portofolio[index][field] = value;
+                    needsSave = true;
                 } else { 
                     const index = parseInt(target.dataset.index, 10);
                     data[dataType][index][field] = value;
@@ -1580,6 +1686,9 @@
                         if (dataType === 'danaStrategisKomponen') {
                             const idToDelete = target.dataset.id;
                             data.danaStrategis.komponen = data.danaStrategis.komponen.filter(c => c.id !== idToDelete);
+                        } else if (dataType === 'portofolio') {
+                            const index = parseInt(target.dataset.index, 10);
+                            data.portofolio.splice(index, 1);
                         } else {
                              const index = parseInt(target.dataset.index, 10);
                              data[dataType].splice(index, 1);
