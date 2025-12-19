@@ -204,7 +204,7 @@
             .card, .section, .strategic-fund-card { padding: 20px; }
             .mobile-scroll-hint { display: block; }
             th, td { padding: 10px 8px; font-size: 0.85rem; }
-            /* .trend-summary { grid-template-columns: 1fr; }  Hapus ini agar tetap 2 kolom di HP */
+            .trend-summary { grid-template-columns: 1fr; } /* Stack summary on mobile */
         }
 
         @media (max-width: 480px) {
@@ -455,10 +455,14 @@
                 const monthKey = availableMonths[i];
                 if (financeData[monthKey]) {
                     const data = financeData[monthKey];
-                    // 1. Total Pemasukan Liquid (termasuk strategis yang liquid)
+                    // 1. Total Pemasukan Liquid (hanya liquid dan non-strategis)
                     const totalPemasukan = data.pemasukan.reduce((sum, item) => {
                          const status = (item.status || '').toLowerCase();
-                         return (status === 'liquid' || status === 'likuid') ? sum + item.jumlah : sum;
+                         // Koreksi: Hanya menghitung pemasukan yang BUKAN strategis agar konsisten dengan Sisa Kas Dashboard
+                         if ((status === 'liquid' || status === 'likuid') && !item.untukDanaStrategis) {
+                             return sum + item.jumlah;
+                         }
+                         return sum;
                     }, 0);
                     
                     // 2. Total Pengeluaran
@@ -467,9 +471,9 @@
                     // 3. Penarikan Aset (Manual Withdrawal)
                     const penarikan = data.penarikanAset || 0;
 
-                    // Rumus Aset: (Pemasukan - Pengeluaran) - Penarikan
-                    // Ini mengakomodasi bulan yang surplus maupun defisit
-                    cumulativeAssets += (totalPemasukan - totalPengeluaran - penarikan);
+                    // Rumus Aset: (Pemasukan Operasional - Pengeluaran) - Penarikan (karena input penarikan negatif, maka + penarikan)
+                    // Wait, input is usually negative like "-2500000". So if we want to reduce assets, we ADD the negative number.
+                    cumulativeAssets += (totalPemasukan - totalPengeluaran + penarikan);
                 }
             }
             return cumulativeAssets;
@@ -568,21 +572,24 @@
             monthsToInclude.forEach(monthKey => {
                 const data = financeData[monthKey];
                 
-                // Income
+                // Income: Konsisten dengan Dashboard & Aset -> HANYA OPERASIONAL (Non-Strategis)
                 const income = data.pemasukan.reduce((sum, item) => {
                     const status = (item.status || '').toLowerCase();
-                    return (status === 'liquid' || status === 'likuid') ? sum + item.jumlah : sum;
+                    if ((status === 'liquid' || status === 'likuid') && !item.untukDanaStrategis) {
+                        return sum + item.jumlah;
+                    }
+                    return sum;
                 }, 0);
                 
                 // Expense
                 const expense = data.pengeluaran.reduce((sum, item) => sum + (item.aktual || 0), 0);
                 
-                // Withdrawal
+                // Withdrawal (Stored as negative, so we add it to totalWithdrawal which will be negative)
                 const withdrawal = data.penarikanAset || 0;
                 
                 totalIncome += income;
                 totalExpense += expense;
-                totalWithdrawal += withdrawal;
+                totalWithdrawal += withdrawal; // This will be a negative number
             });
 
             // Calculate Period Labels
@@ -628,7 +635,8 @@
             }
 
             // Real "Selisih" Calculation
-            const selisih = totalIncome - totalExpense - totalWithdrawal;
+            // Income - Expense + Withdrawal (since withdrawal is negative)
+            const selisih = totalIncome - totalExpense + totalWithdrawal;
 
             // UPDATE LABEL PERIODE
             const periodLabel = document.getElementById('trend-period-label');
@@ -653,7 +661,7 @@
                 </div>
                  <div class="trend-summary-item">
                     <h4>Penarikan Aset (Darurat)</h4>
-                    <div class="value withdrawal">Rp -${new Intl.NumberFormat('id-ID').format(totalWithdrawal)}</div>
+                    <div class="value withdrawal">${formatCurrency(totalWithdrawal)}</div>
                 </div>
                 <div class="trend-summary-item">
                     <h4>Selisih Bersih (Net) 💰</h4>
@@ -663,12 +671,16 @@
 
             if (trendChart) trendChart.destroy();
 
+            // Prepare positive values for Pie Chart segments
+            // Withdrawal is negative, so take absolute value for display size
+            const withdrawalAbs = Math.abs(totalWithdrawal);
+
             trendChart = new Chart(trendCtx, {
                 type: 'pie',
                 data: {
                     labels: ['Pemasukan', 'Pengeluaran', 'Penarikan Aset'],
                     datasets: [{
-                        data: [totalIncome, totalExpense, totalWithdrawal],
+                        data: [totalIncome, totalExpense, withdrawalAbs],
                         backgroundColor: [
                             'rgba(16, 185, 129, 0.7)', // Hijau (Income)
                             'rgba(239, 68, 68, 0.7)',  // Merah (Expense)
@@ -691,7 +703,13 @@
                                         label += ': ';
                                     }
                                     if (context.parsed !== null) {
-                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed);
+                                        // Display original value logic
+                                        // If it's the Withdrawal segment, show as negative
+                                        let val = context.parsed;
+                                        if (context.dataIndex === 2) { // Withdrawal index
+                                            val = -val;
+                                        }
+                                        label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(val);
                                     }
                                     return label;
                                 }
